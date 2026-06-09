@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import re
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
@@ -11,6 +13,7 @@ from typing import Callable
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import AIMessage
 from langchain_core.messages import HumanMessage
 from langchain_core.messages import SystemMessage
 from langchain_core.tools import BaseTool
@@ -78,6 +81,52 @@ class ResearchMiniLiteAgent:
             for tool in self.tools
         ]
 
+    def _schema_response_format(self, schema: dict[str, Any], schema_name: str) -> dict[str, Any]:
+        safe_name = re.sub(r"[^a-zA-Z0-9_-]+", "_", schema_name).strip("_") or "research_output"
+        return {
+            "type": "json_schema",
+            "json_schema": {
+                "name": safe_name[:64],
+                "schema": schema,
+                "strict": False,
+            },
+        }
+
+    async def _format_with_output_schema(self, state: ResearchMiniLiteState) -> ResearchMiniLiteState:
+        if not state.output_schema:
+            return state
+
+        final_content = str(state.messages[-1].content)
+        original_query = next(
+            (
+                str(message.content)
+                for message in state.messages
+                if isinstance(message, HumanMessage)
+            ),
+            "",
+        )
+        prompt = (
+            "Convert the research report into JSON that conforms to the provided JSON Schema. "
+            "Use only information supported by the report. Preserve citations or source URLs in fields "
+            "where the schema provides a place for them. Return JSON only.\n\n"
+            f"Original query:\n{original_query}\n\n"
+            f"JSON Schema:\n{json.dumps(state.output_schema, indent=2)}\n\n"
+            f"Research report:\n{final_content}"
+        )
+        structured_llm = self.llm.bind(
+            response_format=self._schema_response_format(
+                state.output_schema,
+                state.output_schema_name,
+            )
+        )
+        response = await structured_llm.ainvoke([HumanMessage(content=prompt)])
+        content = response.content
+        if not isinstance(content, str):
+            content = json.dumps(content)
+        json.loads(content)
+        state.messages[-1] = AIMessage(content=content)
+        return state
+
     def _build_graph(self) -> CompiledStateGraph:
         async def agent_node(state: ResearchMiniLiteState) -> dict[str, Any]:
             tools_info = state.tools_info or self.tools_info
@@ -121,7 +170,10 @@ class ResearchMiniLiteAgent:
     async def run(self, state: ResearchMiniLiteState) -> ResearchMiniLiteState:
         recursion_limit = (self.max_llm_turns * 2) + 10
         result = await self._graph.ainvoke(state, config={"recursion_limit": recursion_limit})
-        return ResearchMiniLiteState.model_validate(result)
+        validated = ResearchMiniLiteState.model_validate(result)
+        validated.output_schema = validated.output_schema or state.output_schema
+        validated.output_schema_name = state.output_schema_name
+        return await self._format_with_output_schema(validated)
 
     @property
     def graph(self) -> CompiledStateGraph:

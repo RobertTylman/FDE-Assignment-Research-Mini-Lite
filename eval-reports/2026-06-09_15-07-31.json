@@ -1,0 +1,60 @@
+{
+  "queries": [
+    "What is Tavily Search API used for?"
+  ],
+  "options": {
+    "providers": [
+      "tavily_search_advanced"
+    ],
+    "judge_quality": false,
+    "max_concurrency": 3,
+    "tavily_max_results": 1,
+    "tavily_research_timeout_seconds": 180.0,
+    "tavily_research_poll_seconds": 2.0,
+    "tavily_research_output_length": "standard",
+    "output_schema": null,
+    "output_schema_name": "research_output"
+  },
+  "items": [
+    {
+      "query": "What is Tavily Search API used for?",
+      "results": [
+        {
+          "provider": "tavily_search_advanced",
+          "label": "Tavily Search Advanced + Answer",
+          "ok": true,
+          "latency_seconds": 2.2570657080013916,
+          "output": "# Tavily Search Advanced Answer\n\nThe Tavily Search API is a tool designed for AI developers to seamlessly incorporate real‑time, factual web information into their applications, especially large language models and Retrieval‑Augmented Generation (RAG) systems; it offers three core capabilities—a standard search that returns structured results, a context‑extraction function that delivers relevant content and source citations within a token limit, and a question‑answering mode that produces concise answers for AI agents—thereby enhancing the accuracy, relevance, and reliability of AI‑generated outputs while reducing hallucinations and the need for developers to handle data collection, filtering, and token management themselves.\n\n## Sources\n\n[1] Boost Your RAG Performance with Tavily Search API | by Minh Le Duc\nURL: https://medium.com/@minhle_0210/boost-your-rag-performance-with-tavily-search-api-607a6437ab8e\nSnippet: # Step 3. Get the result!!!\n\nprint(result)\n## Conclusion\n\nIn our exploration of the Tavily Search API, we’ve delved into its functionalities, demystifying how it harnesses AI to enhance search. The Tavily Search API emerges as a vital tool for developers seeking to build more robust and reliable LLMs and RAG systems. By providing accurate, contextually relevant information, Tavily helps mitigate the challenges of hallucinations and outdated knowledge, paving the way for more trustworthy and insightful AI applications. [...] The Tavily provides 3 simple ways of searching:\n\n   `search`: performs a Tavily Search query and returns the response as a well-structured `dict`.\n   `get_search_context:` performs a Tavily Search query and returns a `str` of content and sources within the provided token limit. It's useful for getting only related content from retrieved websites without having to deal with context extraction and token management.\n   `qna_search`: performs a search and returns a string containing an answer to the original query. This is optimal to be used as a tool for AI agents.\n\nTogether, the code implementation will be:\n\nimport os\n\nfrom dotenv import load_dotenv\n\nfrom tavily import TavilyClient\n\nload_dotenv()\n\nTAVILY_API_KEY = os.getenv(\"TAVILY_API_KEY\")\n\n# Step 1. Instantiating your TavilyClient [...] # Boost Your RAG Performance with Tavily Search API | by Minh Le Duc | Medium\n\nSitemap\n\nOpen in app\n\nSign up\n\nSign in\n\n_ and _Retrieval Augmented Generation (RAG)_ tasks. It _delivers efficient, quick, and persistent search results,_ focusing on providing the most relevant information for AI developers and autonomous agents.\n\nImage 4\n\nTavily’s logo.\n\nTavily is a search engine built from the ground up for AI models. Tavily’s developers understand the unique challenges faced by LLMs and RAG systems, and they’ve designed Tavily to be the ultimate solution. With a focus on speed, accuracy, and relevance, Tavily delivers search results tailored to AI applications. The platform handles the heavy lifting of data collection, filtering, and extraction, empowering us to build exceptional AI models.",
+          "error": null,
+          "source_count": 1,
+          "sources": [
+            {
+              "title": "Boost Your RAG Performance with Tavily Search API | by Minh Le Duc",
+              "url": "https://medium.com/@minhle_0210/boost-your-rag-performance-with-tavily-search-api-607a6437ab8e"
+            }
+          ],
+          "metadata": {
+            "response_time": 2.05,
+            "request_id": "439bc827-49ba-441c-8663-d30301fbdc23",
+            "usage": {
+              "credits": 2
+            }
+          }
+        }
+      ],
+      "quality": null
+    }
+  ],
+  "summary": {
+    "query_count": 1,
+    "provider_count": 1,
+    "average_latency_seconds": {
+      "tavily_search_advanced": 2.2570657080013916
+    },
+    "average_quality_overall": {},
+    "winners": {}
+  },
+  "created_at": "2026-06-09T15:07:31-04:00",
+  "report_filename": "2026-06-09_15-07-31.json",
+  "report_path": "/Users/robbietylman/GitHub/Research-Mini-Lite/eval-reports/2026-06-09_15-07-31.json"
+}

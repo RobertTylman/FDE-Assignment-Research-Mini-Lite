@@ -1,18 +1,26 @@
+import json
 import os
 from pathlib import Path
+from typing import Any
 
 from dotenv import dotenv_values
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
+from pydantic import Field
 
 from research_mini_lite import ResearchMiniLiteAgent
 from research_mini_lite import ResearchMiniLiteState
+from research_mini_lite.evaluation import EvaluationOptions
+from research_mini_lite.evaluation import SAMPLE_QUERIES
+from research_mini_lite.evaluation import run_evaluation
 from research_mini_lite.tools import web_search
 
 APP_DIR = Path(__file__).parent
 REPO_ROOT = APP_DIR.parent
+EVAL_REPORTS_DIR = REPO_ROOT / "eval-reports"
 
 
 def load_environment() -> None:
@@ -82,6 +90,41 @@ app = FastAPI(title="Web Agent API")
 
 class QueryRequest(BaseModel):
     query: str
+    output_schema: dict[str, Any] | None = None
+    output_schema_name: str = "research_output"
+
+
+class EvaluationRequest(BaseModel):
+    queries: list[str]
+    options: EvaluationOptions = Field(default_factory=EvaluationOptions)
+
+
+@app.get("/", response_class=HTMLResponse)
+async def evaluation_ui():
+    return (APP_DIR / "static" / "index.html").read_text()
+
+
+@app.get("/eval/sample-queries")
+async def sample_queries():
+    return {"queries": SAMPLE_QUERIES}
+
+
+@app.post("/eval/run")
+async def run_eval(request: EvaluationRequest):
+    """
+    Compare Tavily Search Advanced, Research Mini Lite, and Tavily Research Mini.
+    """
+    try:
+        return await run_evaluation(
+            request.queries,
+            request.options,
+            build_agent,
+            reports_dir=EVAL_REPORTS_DIR,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/run")
@@ -98,11 +141,18 @@ async def run_agent(request: QueryRequest):
         if not openai_api_key:
             raise HTTPException(status_code=500, detail="OPENAI_API_KEY not set")
 
-        state = ResearchMiniLiteState(messages=[HumanMessage(content=request.query)])
+        state = ResearchMiniLiteState(
+            messages=[HumanMessage(content=request.query)],
+            output_schema=request.output_schema,
+            output_schema_name=request.output_schema_name,
+        )
         result = await build_agent().run(state)
         output = result.messages[-1].content
+        response = {"query": request.query, "output": output}
+        if request.output_schema:
+            response["output_json"] = json.loads(str(output))
 
-        return {"query": request.query, "output": output}
+        return response
 
     except HTTPException:
         raise

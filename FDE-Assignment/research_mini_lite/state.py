@@ -15,3 +15,5 @@ class ResearchMiniLiteState(BaseModel):
     user_info: dict[str, Any] | None = None
     tools_info: list[dict[str, Any]] | None = None
     tool_iterations: int = 0
+    output_schema: dict[str, Any] | None = None
+    output_schema_name: str = "research_output"
