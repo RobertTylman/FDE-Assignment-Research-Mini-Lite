@@ -1,16 +1,32 @@
 import os
+from pathlib import Path
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 from fastapi import FastAPI, HTTPException
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
 
-from shallow_agent import ShallowResearchAgentState
-from shallow_agent import ShallowResearcherAgent
-from shallow_agent.tools import web_search
+from research_mini_lite import ResearchMiniLiteAgent
+from research_mini_lite import ResearchMiniLiteState
+from research_mini_lite.tools import web_search
 
-load_dotenv()
+APP_DIR = Path(__file__).parent
+REPO_ROOT = APP_DIR.parent
+
+
+def load_environment() -> None:
+    """Load non-empty env values from repo root, then FDE-Assignment."""
+
+    for env_path in (REPO_ROOT / ".env", APP_DIR / ".env"):
+        if not env_path.exists():
+            continue
+        for key, value in dotenv_values(env_path).items():
+            if value:
+                os.environ[key] = value
+
+
+load_environment()
 
 
 def _env_int(name: str, default: int | None = None) -> int | None:
@@ -53,8 +69,8 @@ def build_llm() -> ChatOpenAI:
     return ChatOpenAI(**llm_kwargs)
 
 
-def build_agent() -> ShallowResearcherAgent:
-    return ShallowResearcherAgent(
+def build_agent() -> ResearchMiniLiteAgent:
+    return ResearchMiniLiteAgent(
         llm=build_llm(),
         tools=[web_search],
         max_tool_iterations=_env_int("MAX_TOOL_ITERATIONS", 5),
@@ -71,7 +87,7 @@ class QueryRequest(BaseModel):
 @app.post("/run")
 async def run_agent(request: QueryRequest):
     """
-    Execute the bounded shallow research agent on a query string.
+    Execute the bounded Research Mini Lite agent on a query string.
     """
     try:
         tavily_api_key = os.getenv("TAVILY_API_KEY")
@@ -82,7 +98,7 @@ async def run_agent(request: QueryRequest):
         if not openai_api_key:
             raise HTTPException(status_code=500, detail="OPENAI_API_KEY not set")
 
-        state = ShallowResearchAgentState(messages=[HumanMessage(content=request.query)])
+        state = ResearchMiniLiteState(messages=[HumanMessage(content=request.query)])
         result = await build_agent().run(state)
         output = result.messages[-1].content
 

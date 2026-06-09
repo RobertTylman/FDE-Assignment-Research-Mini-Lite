@@ -1,4 +1,4 @@
-"""Bounded shallow research agent."""
+"""Bounded Research Mini Lite agent."""
 
 from __future__ import annotations
 
@@ -19,12 +19,12 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 from langgraph.prebuilt import tools_condition
 
-from shallow_agent.state import ShallowResearchAgentState
+from research_mini_lite.state import ResearchMiniLiteState
 
 AGENT_DIR = Path(__file__).parent
 
 
-class ShallowResearcherAgent:
+class ResearchMiniLiteAgent:
     """Fast tool-augmented research agent with a hard tool-call budget."""
 
     def __init__(
@@ -79,7 +79,7 @@ class ShallowResearcherAgent:
         ]
 
     def _build_graph(self) -> CompiledStateGraph:
-        async def agent_node(state: ShallowResearchAgentState) -> dict[str, Any]:
+        async def agent_node(state: ResearchMiniLiteState) -> dict[str, Any]:
             tools_info = state.tools_info or self.tools_info
             rendered_system_prompt = self._render_system_prompt(
                 tools_info=tools_info,
@@ -106,7 +106,7 @@ class ShallowResearcherAgent:
 
             return {"messages": [response], "tool_iterations": next_iterations}
 
-        builder = StateGraph(ShallowResearchAgentState)
+        builder = StateGraph(ResearchMiniLiteState)
         builder.add_node("agent", agent_node)
         builder.add_node("tools", ToolNode(self.tools))
         builder.set_entry_point("agent")
@@ -118,10 +118,10 @@ class ShallowResearcherAgent:
         builder.add_edge("tools", "agent")
         return builder.compile()
 
-    async def run(self, state: ShallowResearchAgentState) -> ShallowResearchAgentState:
+    async def run(self, state: ResearchMiniLiteState) -> ResearchMiniLiteState:
         recursion_limit = (self.max_llm_turns * 2) + 10
         result = await self._graph.ainvoke(state, config={"recursion_limit": recursion_limit})
-        return ShallowResearchAgentState.model_validate(result)
+        return ResearchMiniLiteState.model_validate(result)
 
     @property
     def graph(self) -> CompiledStateGraph:

@@ -1,4 +1,4 @@
-"""State model for the shallow research graph."""
+"""State model for the Research Mini Lite graph."""
 
 from typing import Annotated
 from typing import Any
@@ -8,7 +8,7 @@ from langgraph.graph.message import add_messages
 from pydantic import BaseModel
 
 
-class ShallowResearchAgentState(BaseModel):
+class ResearchMiniLiteState(BaseModel):
     """Conversation state passed between agent and tool nodes."""
 
     messages: Annotated[list[AnyMessage], add_messages]

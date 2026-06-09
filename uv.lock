@@ -1003,7 +1003,7 @@ wheels = [
 ]
 
 [[package]]
-name = "shallow-agent-test"
+name = "research-mini-lite"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
