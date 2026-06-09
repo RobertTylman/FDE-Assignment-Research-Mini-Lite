@@ -38,6 +38,7 @@ class ShallowResearcherAgent:
     ) -> None:
         self.llm = llm
         self.tools = list(tools)
+        self.llm_with_tools = self.llm.bind_tools(self.tools, parallel_tool_calls=True)
         self.max_llm_turns = max_llm_turns
         self.max_tool_iterations = max_tool_iterations
         self.system_prompt = system_prompt or self._load_system_prompt()
@@ -97,8 +98,7 @@ class ShallowResearcherAgent:
                 response = await self.llm.ainvoke([system_message] + state.messages + [synthesis_anchor])
                 return {"messages": [response], "tool_iterations": state.tool_iterations}
 
-            llm_with_tools = self.llm.bind_tools(self.tools, parallel_tool_calls=True)
-            response = await llm_with_tools.ainvoke([system_message] + state.messages)
+            response = await self.llm_with_tools.ainvoke([system_message] + state.messages)
 
             next_iterations = state.tool_iterations
             if getattr(response, "tool_calls", None):

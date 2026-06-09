@@ -27,6 +27,28 @@ OPENAI_API_KEY=...
 TAVILY_API_KEY=...
 ```
 
+Optional latency and quality knobs are available in `.env`:
+
+```text
+OPENAI_MODEL=gpt-4.1-mini
+OPENAI_TEMPERATURE=0.1
+# OPENAI_TIMEOUT_SECONDS=30
+# OPENAI_MAX_RETRIES=2
+# OPENAI_MAX_TOKENS=700
+MAX_TOOL_ITERATIONS=5
+TAVILY_TIMEOUT_SECONDS=30
+TAVILY_MAX_RESULTS=5
+TAVILY_SEARCH_DEPTH=basic
+TAVILY_INCLUDE_ANSWER=false
+TAVILY_INCLUDE_RAW_CONTENT=false
+# TAVILY_SNIPPET_CHARS=700
+```
+
+For lower p95 latency, the biggest lever is `MAX_TOOL_ITERATIONS`. Each extra
+search iteration adds another model round trip plus a web request before final
+synthesis. `TAVILY_MAX_RESULTS`, `TAVILY_SNIPPET_CHARS`, `OPENAI_TIMEOUT_SECONDS`,
+and `OPENAI_MAX_TOKENS` are the next most useful controls.
+
 ## Run
 
 ```bash
