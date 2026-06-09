@@ -8,10 +8,12 @@
       :root {
         color-scheme: light;
         --bg: #f7f8fa;
-        --panel: #ffffff;
+        --panel: rgba(255, 255, 255, 0.78);
+        --panel-strong: rgba(255, 255, 255, 0.88);
+        --surface: rgba(255, 255, 255, 0.72);
         --ink: #172026;
         --muted: #5e6a72;
-        --line: #d8dee4;
+        --line: rgba(126, 139, 150, 0.36);
         --accent: #0d766e;
         --accent-dark: #095f59;
         --warn: #a34800;
@@ -25,11 +27,15 @@
 
       body {
         margin: 0;
-        background: var(--bg);
+        background:
+          linear-gradient(rgba(247, 248, 250, 0.58), rgba(247, 248, 250, 0.68)),
+          url("/background.webp") center / cover fixed no-repeat,
+          var(--bg);
         color: var(--ink);
         font-family:
           Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         line-height: 1.45;
+        min-height: 100vh;
       }
 
       header,
@@ -52,6 +58,7 @@
         font-size: 28px;
         font-weight: 700;
         letter-spacing: 0;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
       }
 
       .subtitle {
@@ -77,6 +84,8 @@
         background: var(--panel);
         border: 1px solid var(--line);
         border-radius: 8px;
+        box-shadow: 0 12px 40px rgba(23, 32, 38, 0.08);
+        backdrop-filter: blur(14px) saturate(1.08);
       }
 
       .control-panel {
@@ -99,10 +108,18 @@
         width: 100%;
         border: 1px solid var(--line);
         border-radius: 6px;
-        background: #fff;
+        background: var(--surface);
         color: var(--ink);
         padding: 10px 11px;
         font: inherit;
+      }
+
+      textarea:focus,
+      input:focus,
+      select:focus {
+        background: var(--panel-strong);
+        border-color: rgba(13, 118, 110, 0.56);
+        outline: 2px solid rgba(13, 118, 110, 0.12);
       }
 
       textarea {
@@ -119,6 +136,25 @@
         grid-template-columns: 1fr 1fr;
         gap: 12px;
         margin-top: 14px;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .field label {
+        margin-bottom: 6px;
+        min-height: 38px;
+        display: flex;
+        align-items: flex-end;
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.35;
+        margin-top: 6px;
       }
 
       .checks {
@@ -150,7 +186,7 @@
       button {
         border: 1px solid var(--line);
         border-radius: 6px;
-        background: #fff;
+        background: var(--panel-strong);
         color: var(--ink);
         cursor: pointer;
         font: inherit;
@@ -176,7 +212,7 @@
 
       .summary {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: minmax(160px, 0.35fr) minmax(320px, 1fr);
         gap: 12px;
         margin-bottom: 16px;
       }
@@ -271,14 +307,14 @@
       .score {
         margin: 10px 0;
         padding: 10px;
-        background: #f4f7f6;
+        background: rgba(244, 247, 246, 0.74);
         border-radius: 6px;
         color: var(--muted);
         font-size: 13px;
       }
 
       pre {
-        background: #fbfcfd;
+        background: rgba(251, 252, 253, 0.78);
         border: 1px solid var(--line);
         border-radius: 6px;
         margin: 0;
@@ -338,7 +374,7 @@
         <h1>Research Evaluation</h1>
         <p class="subtitle">
           Compare Tavily Search Advanced with answer, Research Mini Lite, and Tavily Research Mini
-          on report quality and latency.
+          on report quality, latency, and source depth. Research Mini Lite is tuned for 10-12 sources under 10 seconds.
         </p>
       </div>
       <div class="status" id="status">Ready</div>
@@ -369,28 +405,32 @@
         </div>
 
         <div class="row">
-          <div>
+          <div class="field">
             <label for="maxConcurrency">Query concurrency</label>
             <input id="maxConcurrency" type="number" min="1" max="6" value="2" />
+            <div class="hint">Use 2 for stable latency comparisons.</div>
           </div>
-          <div>
-            <label for="maxResults">Tavily search results</label>
+          <div class="field">
+            <label for="maxResults">Tavily Search baseline sources</label>
             <input id="maxResults" type="number" min="1" max="20" value="8" />
+            <div class="hint">Research Mini Lite independently targets 12 sources.</div>
           </div>
         </div>
 
         <div class="row">
-          <div>
+          <div class="field">
             <label for="outputLength">Research output length</label>
             <select id="outputLength">
               <option value="short">short</option>
               <option value="standard" selected>standard</option>
               <option value="long">long</option>
             </select>
+            <div class="hint">Standard keeps Tavily Research Mini comparable.</div>
           </div>
-          <div>
+          <div class="field">
             <label for="timeout">Research timeout seconds</label>
             <input id="timeout" type="number" min="30" max="600" value="180" />
+            <div class="hint">Only applies to Tavily Research Mini.</div>
           </div>
         </div>
 
@@ -455,7 +495,7 @@
 
       async function loadSamples() {
         statusEl.textContent = "Loading sample queries";
-        const response = await fetch("/eval/sample-queries");
+        const response = await fetch(`/eval/sample-queries?_=${Date.now()}`);
         const data = await response.json();
         queriesEl.value = data.queries.join("\n");
         statusEl.textContent = "Ready";
@@ -476,13 +516,13 @@
       }
 
       function renderSummary(run) {
-        const fastest = Object.entries(run.summary.average_latency_seconds).sort(
-          (a, b) => a[1] - b[1],
-        )[0];
         const best = Object.entries(run.summary.average_quality_overall).sort((a, b) => b[1] - a[1])[0];
-        const winners = Object.entries(run.summary.winners)
-          .map(([name, count]) => `${labels[name] || name}: ${count}`)
-          .join(", ");
+        const topWinner = Object.entries(run.summary.winners).sort((a, b) => b[1] - a[1])[0];
+        const bestLabel = best
+          ? `${escapeHtml(labels[best[0]] || best[0])} (${Number(best[1]).toFixed(1)}/5)`
+          : topWinner
+            ? `${escapeHtml(labels[topWinner[0]] || topWinner[0])}`
+            : "n/a";
 
         summaryEl.innerHTML = `
           <div class="summary">
@@ -491,15 +531,10 @@
               <div class="value">${run.summary.query_count}</div>
             </div>
             <div class="panel metric">
-              <div class="label">Fastest average</div>
-              <div class="value">${fastest ? `${escapeHtml(labels[fastest[0]] || fastest[0])} (${seconds(fastest[1])})` : "n/a"}</div>
-            </div>
-            <div class="panel metric">
-              <div class="label">Best judged quality</div>
-              <div class="value">${best ? `${escapeHtml(labels[best[0]] || best[0])} (${Number(best[1]).toFixed(1)}/5)` : "n/a"}</div>
+              <div class="label">Best overall option</div>
+              <div class="value">${bestLabel}</div>
             </div>
           </div>
-          ${winners ? `<div class="panel judge">Winners: ${escapeHtml(winners)}</div>` : ""}
           ${
             run.report_path
               ? `<div class="panel judge">Saved report: ${escapeHtml(run.report_filename)}<br>${escapeHtml(run.report_path)}</div>`
@@ -512,7 +547,7 @@
         const score = quality?.scores?.[result.provider];
         const scoreHtml = score
           ? `<div class="score">
-              Overall ${score.overall}/5 · completeness ${score.completeness}/5 · grounding ${score.grounding}/5 · synthesis ${score.synthesis}/5
+              Overall ${score.overall}/5 · completeness ${score.completeness}/5 · grounding ${score.grounding}/5 · synthesis ${score.synthesis}/5 · latency ${score.latency ?? "n/a"}/5 · efficiency ${score.efficiency ?? "n/a"}/5
               <br>${escapeHtml(score.rationale || "")}
             </div>`
           : "";
@@ -590,7 +625,8 @@
         runButton.disabled = true;
         statusEl.textContent = "Running evaluation";
         resultsEl.className = "panel empty";
-        resultsEl.textContent = "Running providers and quality judge. Longer Tavily Research runs can take a few minutes.";
+        resultsEl.textContent =
+          "Running providers. Research Mini Lite targets 12 sources under 10 seconds; Tavily Research Mini can take a few minutes.";
         summaryEl.innerHTML = "";
 
         try {

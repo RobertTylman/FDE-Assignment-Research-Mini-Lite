@@ -24,22 +24,30 @@ from research_mini_lite import ResearchMiniLiteState
 ProviderName = Literal["tavily_search_advanced", "research_mini_lite", "tavily_research_mini"]
 
 
-SAMPLE_QUERIES = [
-    "Compare the latest FDA actions and clinical evidence for GLP-1 drugs used for obesity treatment.",
-    "What are the most important changes in the EU AI Act implementation timeline for companies building general-purpose AI systems?",
-    "Analyze the current market and technical tradeoffs for sodium-ion batteries versus lithium iron phosphate batteries.",
-    "Summarize recent evidence on whether hybrid work affects software engineering productivity and retention.",
-    "What changed in the latest U.S. SEC climate disclosure rule status, and what should public companies track now?",
-    "Compare leading open-source small language models for on-device assistants by capability, license, and hardware needs.",
-]
+QUERIES_PATH = Path(__file__).parent / "queries.json"
+try:
+    with open(QUERIES_PATH, "r", encoding="utf-8") as f:
+        SAMPLE_QUERIES = json.load(f)
+except Exception:
+    SAMPLE_QUERIES = []
 
 
-QUALITY_RUBRIC = """Score each report from 1 to 5 on:
-- Answer completeness: directly addresses the research query with enough useful detail.
-- Factual grounding: claims are concrete, current where needed, and supported by cited sources.
-- Source quality: uses authoritative or relevant sources and avoids thin sourcing.
-- Synthesis: compares, prioritizes, and explains implications instead of listing facts.
-- Clarity: report is structured and easy to scan.
+QUALITY_RUBRIC = """Evaluate each report as a practical research answer.
+Score from 1 to 5 on each dimension:
+- Completeness: directly answers the query with enough detail for a knowledgeable user. Do not reward extra length unless it adds crucial, missing coverage.
+- Grounding: claims are concrete, current where needed, and supported by citations or source URLs.
+- Source quality: uses many authoritative, relevant sources and has enough source diversity for the query. Prefer dense useful sourcing over many weak links.
+- Synthesis: compares, prioritizes, explains tradeoffs, and states implications instead of merely listing snippets.
+- Clarity: report is structured, concise, and easy to scan.
+- Latency: score the user-facing speed. Use 5 for under 10 seconds, 4 for 10-20 seconds, 3 for 20-40 seconds, 2 for 40-90 seconds, and 1 for over 90 seconds.
+- Efficiency: quality delivered relative to response time. Consider whether extra latency produced meaningfully better research value.
+
+Overall scoring guidance:
+- Weight the final overall score toward balanced usefulness: 20% completeness, 15% grounding, 10% source quality, 15% synthesis, 10% clarity, 20% latency, 10% efficiency.
+- CRITICAL: User-facing speed is a first-class feature. A report delivered in under 10 seconds (like `research_mini_lite`) must be heavily favored. If a fast report (under 10s) provides a solid, comprehensive, and well-cited answer (achieving 4+ in completeness and grounding), it MUST win over a slow report (over 30s) due to its vastly superior efficiency.
+- Do not let a high-latency report (over 30 seconds) win unless the lower-latency alternative is completely incorrect, shallow, or missing critical answers. Extra detail or formatting tables in a slow report does NOT justify high latency.
+- When reports are close in research quality, use latency, clarity, and efficiency as tie-breakers.
+- Penalize fast reports that are shallow, uncited, or mostly raw snippets.
 
 Return strict JSON with this shape:
 {
@@ -51,6 +59,8 @@ Return strict JSON with this shape:
       "source_quality": 1-5,
       "synthesis": 1-5,
       "clarity": 1-5,
+      "latency": 1-5,
+      "efficiency": 1-5,
       "rationale": "short explanation"
     }
   },
@@ -127,8 +137,10 @@ def _source_count_from_text(text: str | None) -> int:
     references_match = re.search(r"references\s*:\s*(.*)", text, flags=re.IGNORECASE | re.DOTALL)
     source_area = references_match.group(1) if references_match else text
     urls = set(re.findall(r"https?://[^\s\]\)>,]+", source_area))
+    if urls:
+        return len(urls)
     bracket_refs = set(re.findall(r"\[(\d+)\]", text))
-    return max(len(urls), len(bracket_refs))
+    return len(bracket_refs)
 
 
 def _format_search_output(data: dict[str, Any]) -> str:
