@@ -25,12 +25,12 @@ from research_mini_lite.observability import traceable
 ProviderName = Literal["tavily_search_advanced", "research_mini_lite", "tavily_research_mini"]
 
 QUALITY_WEIGHTS = {
-    "completeness": 0.20,
+    "completeness": 0.15,
     "grounding": 0.15,
     "source_quality": 0.10,
-    "synthesis": 0.15,
-    "clarity": 0.10,
-    "latency": 0.20,
+    "synthesis": 0.10,
+    "clarity": 0.15,
+    "latency": 0.25,
     "efficiency": 0.10,
 }
 
@@ -44,22 +44,21 @@ except Exception:
 
 
 QUALITY_RUBRIC = """Evaluate each report as a practical research answer.
-Score from 1 to 5 on each dimension:
-- Completeness: directly answers the query with enough detail for a knowledgeable user. Do not reward extra length unless it adds crucial, missing coverage.
+Score each dimension from 1 to 5:
+- Completeness: directly answers the query with enough useful detail; do not reward length unless it adds important coverage.
 - Grounding: claims are concrete, current where needed, and supported by citations or source URLs.
-- Source quality: uses many authoritative, relevant sources and has enough source diversity for the query. Prefer dense useful sourcing over many weak links.
-- Synthesis: compares, prioritizes, explains tradeoffs, and states implications instead of merely listing snippets.
-- Clarity: report is structured, concise, and easy to scan.
-- Latency: score the user-facing speed. Use 5 for under 10 seconds, 4 for 10-20 seconds, 3 for 20-40 seconds, 2 for 40-90 seconds, and 1 for over 90 seconds.
-- Efficiency: quality delivered relative to response time. Consider whether extra latency produced meaningfully better research value.
+- Source quality: sources are authoritative, relevant, and diverse enough for the query.
+- Synthesis: compares, prioritizes, explains tradeoffs, and states implications rather than listing facts or snippets.
+- Clarity: report is well organized, logically sequenced, concise, and easy to scan. Penalize source dumps, repetition, abrupt topic jumps, unclear hierarchy, long undifferentiated paragraphs, and messy formatting.
+- Latency: score user-facing speed as 5 for under 5 seconds, 4 for 6-20 seconds, 3 for 20-35 seconds, 2 for 35-50 seconds, and 1 for over 50 seconds.
+- Efficiency: quality delivered relative to response time.
 
-Overall scoring guidance:
-- Weight the final overall score toward balanced usefulness: 20% completeness, 15% grounding, 10% source quality, 15% synthesis, 10% clarity, 20% latency, 10% efficiency.
-- The application will recompute overall from the sub-scores above, so make the sub-scores internally consistent with your rationale.
-- CRITICAL: User-facing speed is a first-class feature. A report delivered in under 10 seconds (like `research_mini_lite`) must be heavily favored. If a fast report (under 10s) provides a solid, comprehensive, and well-cited answer (achieving 4+ in completeness and grounding), it MUST win over a slow report (over 30s) due to its vastly superior efficiency.
-- Do not let a high-latency report (over 30 seconds) win unless the lower-latency alternative is completely incorrect, shallow, or missing critical answers. Extra detail or formatting tables in a slow report does NOT justify high latency.
-- When reports are close in research quality, use latency, clarity, and efficiency as tie-breakers.
-- Penalize fast reports that are shallow, uncited, or mostly raw snippets.
+Scoring guidance:
+- Overall is recomputed by the application from sub-scores using: 15% completeness, 15% grounding, 10% source quality, 10% synthesis, 15% clarity, 25% latency, 10% efficiency.
+- For the longest-time report, verify that the added time corresponds to materially stronger structure, synthesis, grounding, or source quality.
+- For the shortest-time report, verify that speed is accompanied by clear organization, useful synthesis, and direct relevance. If the response mostly resembles snippets or a source list, score clarity and synthesis accordingly.
+- Do not confuse volume with quality; downgrade reports that force the reader to assemble the argument.
+- When reports are close in quality, use latency and efficiency as tie-breakers. When reports are close in latency, use structure, synthesis, and source quality as tie-breakers.
 
 Return strict JSON with this shape:
 {
