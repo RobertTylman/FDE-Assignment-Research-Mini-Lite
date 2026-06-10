@@ -23,6 +23,8 @@
 
 Research Mini Lite runs a stateful research loop using LangGraph:
 
+<div style="max-width: 600px; margin: 0 auto;">
+
 ```mermaid
 %%{init: {
   "theme": "base",
@@ -77,6 +79,8 @@ flowchart TD
     style ReturnJSON fill:#0d766e,stroke:#0d766e,color:#ffffff,stroke-width:2px
     style ReturnMarkdown fill:#1e293b,stroke:#1e293b,color:#ffffff,stroke-width:2px
 ```
+
+</div>
 
 ### Why it is so fast:
 1. **Parallel Tool Execution**: When the LLM emits multiple tool calls in a single turn, LangGraph executes them in parallel, enabling multi-aspect search in a single round-trip.
