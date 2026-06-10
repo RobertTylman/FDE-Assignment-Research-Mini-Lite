@@ -207,6 +207,9 @@ if total_wins > 0:
     )
     
     plt.title("GPT-4 Judge: Overall Win Rate", fontsize=16, pad=15, fontweight='bold', color="#0f172a")
+    plt.figtext(0.5, 0.03, 
+                "*Disclaimer: LLM judges often introduce bias. For this eval, grading was:\n25% Completeness | 25% Latency | 20% Grounding | 15% Clarity | 10% Synthesis | 5% Sources", 
+                ha="center", fontsize=9, color="black")
     plt.tight_layout()
     plt.savefig("assets/win_rate.png", dpi=300)
     plt.close()
