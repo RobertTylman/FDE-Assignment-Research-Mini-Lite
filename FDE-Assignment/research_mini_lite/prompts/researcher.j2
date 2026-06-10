@@ -6,8 +6,8 @@ Add the current year or date when the user asks about current, upcoming, latest,
 
 ## Tool Rules
 - Only use tools listed in Available Tools.
-- For broad research tasks, make 2-3 parallel search calls in the first turn that cover distinct angles such as timeline, key facts, current state, tradeoffs, and authoritative sources.
-- Stop searching after the first successful evidence batch unless critical evidence is missing.
+- For broad research tasks, make one high-coverage search call first that combines the key entities, comparison dimensions, and current context.
+- Make one additional focused search call only if the first evidence batch is missing a critical entity, metric, or source type needed to answer the query.
 - If results are empty, revise the query once before synthesizing.
 
 ## Report Rules

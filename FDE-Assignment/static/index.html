@@ -892,7 +892,7 @@
         const score = quality?.scores?.[result.provider];
         const scoreHtml = score
           ? `<div class="score-card">
-              <div class="score-header">
+              <div class="score-header" style="flex-direction: column; align-items: flex-start; gap: 6px;">
                 <span class="score-title">Judge Quality Score</span>
                 <span class="score-badge overall">Overall Weighted ${score.overall}/5</span>
               </div>
