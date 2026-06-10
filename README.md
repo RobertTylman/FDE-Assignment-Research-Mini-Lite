@@ -123,34 +123,6 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
-
-### 2. Configure Environment Variables
-
-Create a `.env` file in the root or `FDE-Assignment` folder:
-
-```env
-TAVILY_API_KEY=your_tavily_api_key
-OPENAI_API_KEY=your_openai_api_key
-
-# Optional LangSmith tracing
-LANGSMITH_API_KEY=your_langsmith_api_key
-LANGSMITH_PROJECT=research-mini-lite
-LANGSMITH_TRACING=true
-
-# Optional Customizations
-OPENAI_MODEL=gpt-4o-mini
-OPENAI_TEMPERATURE=0.1
-RESEARCH_MINI_LITE_FAST_MODE=false
-RESEARCH_MINI_LITE_TARGET_SECONDS=9.5
-RESEARCH_MINI_LITE_FAST_MAX_RESULTS=12
-MAX_TOOL_ITERATIONS=5
-TAVILY_SEARCH_DEPTH=advanced
-TAVILY_INCLUDE_ANSWER=advanced
-TAVILY_CHUNKS_PER_SOURCE=2
-TAVILY_MAX_RESULTS=8
-TAVILY_TIMEOUT_SECONDS=5
-```
-
 ---
 
 ## Running the Application
@@ -168,6 +140,19 @@ If `LANGSMITH_API_KEY` is set, Research Mini Lite traces API calls, Tavily searc
 ```bash
 curl http://localhost:8000/langsmith/status
 ```
+
+---
+
+## Evaluation & Benchmarking
+
+The workspace includes a built-in chat app and evaluation UI to benchmark **Tavily Search Advanced**, **Research Mini Lite**, and **Tavily Research Mini**.
+
+1. Start the server: `python app.py`
+2. Navigate to `http://localhost:8000` in your web browser.
+3. Select or type queries and click **Run Evaluation**.
+4. The dashboard records wall-clock latency, source counts, and prompts an LLM-based judge to score output quality (completeness, factual grounding, source quality, synthesis, clarity) from 1 to 5.
+
+Every evaluation run is saved as a full JSON report in the repository-level `eval-reports/` folder. Filenames use the local date and time, for example `2026-06-09_15-04-22.json`.
 
 ---
 
@@ -217,15 +202,3 @@ curl -X POST "http://localhost:8000/run" \
 
 When schema parameters are included, the API returns a structured object inside the `"output_json"` field.
 
----
-
-## Evaluation & Benchmarking
-
-The workspace includes a built-in chat app and evaluation UI to benchmark **Tavily Search Advanced**, **Research Mini Lite**, and **Tavily Research Mini**.
-
-1. Start the server: `python app.py`
-2. Navigate to `http://localhost:8000` in your web browser.
-3. Select or type queries and click **Run Evaluation**.
-4. The dashboard records wall-clock latency, source counts, and prompts an LLM-based judge to score output quality (completeness, factual grounding, source quality, synthesis, clarity) from 1 to 5.
-
-Every evaluation run is saved as a full JSON report in the repository-level `eval-reports/` folder. Filenames use the local date and time, for example `2026-06-09_15-04-22.json`.
