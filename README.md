@@ -161,21 +161,21 @@ For the full combined report containing all 49 evaluation runs, see [`eval-repor
 <table align="center">
   <tr>
     <td align="center">
-      <b>Model Latency Distributions</b><br>
+      <br>
       <img src="assets/latency_distribution.png" width="100%">
     </td>
     <td align="center">
-      <b>Multi-Metric Quality Radar</b><br>
+      <br>
       <img src="assets/quality_radar.png" width="100%">
     </td>
   </tr>
   <tr>
     <td align="center">
-      <b>Source Density</b><br>
+      <br>
       <img src="assets/source_density.png" width="100%">
     </td>
     <td align="center">
-      <b>LLM Judge Win Rate</b><br>
+      <br>
       <img src="assets/win_rate.png" width="100%">
     </td>
   </tr>
