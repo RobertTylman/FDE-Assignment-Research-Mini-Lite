@@ -63,18 +63,6 @@ def _env_float(name: str, default: float | None = None) -> float | None:
         raise ValueError(f"{name} must be a number, got {value!r}.") from exc
 
 
-def _env_bool(name: str, default: bool) -> bool:
-    value = os.environ.get(name)
-    if value is None:
-        return default
-    normalized = value.strip().lower()
-    if normalized in {"1", "true", "yes", "on"}:
-        return True
-    if normalized in {"0", "false", "no", "off"}:
-        return False
-    raise ValueError(f"{name} must be a boolean, got {value!r}.")
-
-
 def build_llm() -> ChatOpenAI:
     llm_kwargs = {
         "model": os.environ.get("OPENAI_MODEL", "gpt-4.1-mini"),
@@ -100,9 +88,6 @@ def build_agent() -> ResearchMiniLiteAgent:
         llm=build_llm(),
         tools=[web_search],
         max_tool_iterations=_env_int("MAX_TOOL_ITERATIONS", 5),
-        fast_mode=_env_bool("RESEARCH_MINI_LITE_FAST_MODE", False),
-        target_latency_seconds=_env_float("RESEARCH_MINI_LITE_TARGET_SECONDS", 9.5) or 9.5,
-        fast_search_max_results=_env_int("RESEARCH_MINI_LITE_FAST_MAX_RESULTS", 12) or 12,
     )
 
 
