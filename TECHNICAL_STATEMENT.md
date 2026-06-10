@@ -4,7 +4,7 @@
 While building the [RAG Research Extension](https://github.com/RobertTylman/RAG-Research-Extension), the need for a balanced research pipeline became apparent. I identified two critical gaps in the existing ecosystem:
 
 1. **Research Mini is too slow for conversational UI**: While incredibly thorough, its standard execution time (30s–180s) introduces too much friction for continuous, interactive use.
-2. **Search Advanced is too thin for complex schemas**: The standard fast search endpoint (~1–5s) lacks the multi-hop reasoning necessary to synthesize diverse sources and return deeply structured reports.
+2. **Search Advanced is too thin for complex schemas**: The standard fast search endpoint (~1–5s) lacks the deeper multi-hop reasoning necessary to synthesize diverse sources and return deeply structured reports.
 
 ## The Thesis
 Customers want deeply structured outputs and multi-hop reasoning capabilities, but they do not want to pay the high latency and cost penalties associated with a full Research Mini run.
