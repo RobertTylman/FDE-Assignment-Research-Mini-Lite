@@ -96,6 +96,11 @@
         top: 12px;
       }
 
+      .results-column {
+        align-self: start;
+        min-width: 0;
+      }
+
       label {
         display: block;
         color: var(--muted);
@@ -180,7 +185,8 @@
       }
 
       .actions {
-        display: flex;
+        display: grid;
+        grid-template-columns: 1fr;
         gap: 10px;
         margin-top: 18px;
       }
@@ -207,6 +213,17 @@
         background: var(--accent-dark);
       }
 
+      #run {
+        font-size: 16px;
+        min-height: 56px;
+        width: 100%;
+      }
+
+      #loadSamples {
+        min-height: 36px;
+        width: 100%;
+      }
+
       button:disabled {
         cursor: not-allowed;
         opacity: 0.55;
@@ -217,6 +234,10 @@
         grid-template-columns: minmax(160px, 0.35fr) minmax(320px, 1fr);
         gap: 12px;
         margin-bottom: 16px;
+      }
+
+      #summary:empty {
+        display: none;
       }
 
       .metric {
@@ -527,7 +548,7 @@
         border-radius: 8px;
         box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
         backdrop-filter: blur(14px);
-        margin: 20px 0;
+        margin: 0;
       }
       .spinner {
         position: relative;
@@ -722,11 +743,11 @@
 
         <div class="actions">
           <button class="primary" id="run">Run Evaluation</button>
-          <button id="loadSamples">Load Samples</button>
+          <button id="loadSamples">Load Sample Queries</button>
         </div>
       </section>
 
-      <section>
+      <section class="results-column">
         <div id="summary"></div>
         <div id="results" class="panel empty">Run an evaluation to see latency, quality scores, and reports.</div>
       </section>
@@ -776,7 +797,7 @@
       function renderQueryChecklist(checkedValues = null) {
         const container = document.getElementById("query-checklist");
         if (loadedQueries.length === 0) {
-          container.innerHTML = `<div style="color: var(--muted); font-size: 12px; font-style: italic; text-align: center; padding: 10px 0;">No queries loaded. Click 'Load Samples' or add a custom query.</div>`;
+          container.innerHTML = `<div style="color: var(--muted); font-size: 12px; font-style: italic; text-align: center; padding: 10px 0;">No queries loaded. Click "Load Sample Queries" to populate benchmark tasks, or add a custom query.</div>`;
           return;
         }
 
@@ -870,14 +891,13 @@
           ? `<div class="score-card">
               <div class="score-header">
                 <span class="score-title">Judge Quality Score</span>
-                <span class="score-badge overall">Overall ${score.overall}/5</span>
+                <span class="score-badge overall">Overall Weighted ${score.overall}/5</span>
               </div>
               <div class="score-metrics">
                 <span class="metric-badge">Completeness: ${score.completeness}/5</span>
                 <span class="metric-badge">Grounding: ${score.grounding}/5</span>
                 <span class="metric-badge">Synthesis: ${score.synthesis}/5</span>
                 <span class="metric-badge">Latency: ${score.latency ?? "n/a"}/5</span>
-                <span class="metric-badge">Efficiency: ${score.efficiency ?? "n/a"}/5</span>
               </div>
               <p class="score-rationale">${escapeHtml(score.rationale || "")}</p>
             </div>`
@@ -1034,7 +1054,7 @@
             </div>
             <h3 class="loading-title">Running Benchmark Evaluation</h3>
             <p class="loading-subtitle">
-              Executing providers in parallel. Research Mini Lite now uses the original LangGraph agent loop; Tavily Research Mini may run for 1 to 2 minutes.
+              Executing selected providers in parallel and sending completed reports to the judge. Longer research providers may take 1 to 2 minutes.
             </p>
             <div class="timer-display" id="loading-timer">0.0s elapsed</div>
           </div>
