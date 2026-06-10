@@ -150,7 +150,7 @@ if not df_radar_raw.empty:
     
     # Adjust layout to remove excessive whitespace while fitting the legend
     plt.tight_layout(pad=2.0)
-    plt.savefig("assets/quality_radar.png", dpi=300, bbox_inches='tight')
+    plt.savefig("assets/quality_radar.png", dpi=300)
     plt.close()
 
 # 3. Source Density / Depth (Boxplot)

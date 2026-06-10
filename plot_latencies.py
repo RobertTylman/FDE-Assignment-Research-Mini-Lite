@@ -106,5 +106,5 @@ ax.set_ylim(ymin, ymax + (ymax - ymin) * 0.1)
 plt.tight_layout()
 
 os.makedirs("assets", exist_ok=True)
-plt.savefig("assets/latency_distribution.png", dpi=300, bbox_inches='tight')
+plt.savefig("assets/latency_distribution.png", dpi=300)
 print("Saved playful chart with averages to assets/latency_distribution.png")
