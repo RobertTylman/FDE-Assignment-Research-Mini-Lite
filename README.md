@@ -1,6 +1,6 @@
 # FDE Assignment: Tavily Research Mini Lite
 
-📖 **[Read the Technical Statement](TECHNICAL_STATEMENT.md)** for a deep dive into the product philosophy, architecture, and tradeoffs.
+📖 **[Technical Statement](TECHNICAL_STATEMENT.md)** for product philosophy, architecture, and tradeoffs.
 
 > **Option 1: Improve an Existing Application**
 > This repository contains a highly optimized, bounded research agent implementation (**Research Mini Lite**) designed to bridge the gap between fast single-hop searches and high-latency, high-cost multi-agent research pipelines.
