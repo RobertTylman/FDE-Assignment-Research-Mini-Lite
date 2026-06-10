@@ -154,6 +154,10 @@ The workspace includes a built-in chat app and evaluation UI to benchmark **Tavi
 
 Every evaluation run is saved as a full JSON report in the repository-level `eval-reports/` folder. Filenames use the local date and time, for example `2026-06-09_15-04-22.json`.
 
+### Model Latency Distributions
+
+![Latency Distribution](assets/latency_distribution.png)
+
 ---
 
 ## Usage Examples
