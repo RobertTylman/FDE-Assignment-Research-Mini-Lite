@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 
-files = ["eval-reports/2026-06-10_13-23-38.json"]
+files = ["eval-reports/big_eval.json"]
 
 data_records = []
 

@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 from math import pi
 
-files = ["eval-reports/2026-06-10_13-23-38.json"]
+files = ["eval-reports/big_eval.json"]
 
 # Data structures
 scatter_data = []
@@ -71,11 +71,12 @@ for f in files:
                 if prov_scores:
                     radar_data_raw.append({
                         "Provider": provider,
+                        "Overall": prov_scores.get('overall', 0),
+                        "Latency Score": prov_scores.get('latency', 0),
                         "Completeness": prov_scores.get('completeness', 0),
                         "Grounding": prov_scores.get('grounding', 0),
                         "Synthesis": prov_scores.get('synthesis', 0),
-                        "Clarity": prov_scores.get('clarity', 0),
-                        "Overall": prov_scores.get('overall', 0)
+                        "Clarity": prov_scores.get('clarity', 0)
                     })
 
 sns.set_theme(style="whitegrid", rc={"axes.edgecolor": "#cbd5e1", "grid.color": "#f1f5f9"})
@@ -111,21 +112,26 @@ df_radar_raw = pd.DataFrame(radar_data_raw)
 if not df_radar_raw.empty:
     # Group by provider and compute mean
     df_radar_mean = df_radar_raw.groupby("Provider").mean().reset_index()
-    categories = ['Completeness', 'Grounding', 'Synthesis', 'Clarity', 'Overall']
+    categories = ['Overall', 'Latency Score', 'Completeness', 'Grounding', 'Synthesis', 'Clarity']
     N = len(categories)
     angles = [n / float(N) * 2 * pi for n in range(N)]
     angles += angles[:1]
     
-    plt.figure(figsize=(8, 8))
+    plt.figure(figsize=(7, 7))
+    plt.rcParams.update({'font.size': 12})
+    
     ax = plt.subplot(111, polar=True)
     
     ax.set_theta_offset(pi / 2)
     ax.set_theta_direction(-1)
     
-    plt.xticks(angles[:-1], categories, color="#334155", size=11, fontweight='bold')
+    plt.xticks(angles[:-1], categories, color="#334155", size=12, fontweight='bold')
     ax.set_rlabel_position(0)
-    plt.yticks([1,2,3,4,5], ["1","2","3","4","5"], color="grey", size=9)
+    plt.yticks([1,2,3,4,5], ["1","2","3","4","5"], color="grey", size=10)
     plt.ylim(0,5.5)
+    
+    # Remove the outer spine for a cleaner look
+    ax.spines['polar'].set_visible(False)
     
     for _, row in df_radar_mean.iterrows():
         prov = row['Provider']
@@ -134,13 +140,17 @@ if not df_radar_raw.empty:
         color = palette.get(prov, "#000000")
         label = labels.get(prov, prov)
         
-        ax.plot(angles, values, linewidth=2.5, linestyle='solid', label=label, color=color)
+        ax.plot(angles, values, linewidth=2.5, linestyle='solid', marker='o', markersize=6, label=label, color=color)
         ax.fill(angles, values, color=color, alpha=0.15)
         
-    plt.title("Multi-Metric Quality Averages", size=16, fontweight='bold', y=1.1, color="#0f172a")
-    plt.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
-    plt.tight_layout()
-    plt.savefig("assets/quality_radar.png", dpi=300)
+    plt.title("Multi-Metric Quality Averages", size=18, fontweight='bold', y=1.08, color="#0f172a")
+    
+    # Place legend at the bottom center to keep the radar chart perfectly centered
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), frameon=True, ncol=3)
+    
+    # Adjust layout to remove excessive whitespace while fitting the legend
+    plt.tight_layout(pad=2.0)
+    plt.savefig("assets/quality_radar.png", dpi=300, bbox_inches='tight')
     plt.close()
 
 # 3. Source Density / Depth (Boxplot)
