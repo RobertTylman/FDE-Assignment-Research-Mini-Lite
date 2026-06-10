@@ -52,7 +52,7 @@ Score each dimension from 1 to 5:
 - Latency: score user-facing speed as 5 for under 5 seconds, 4 for 6-20 seconds, 3 for 20-35 seconds, 2 for 35-50 seconds, and 1 for over 50 seconds.
 
 Scoring guidance:
-- Overall is recomputed by the application from sub-scores using: 25% completeness, 25% grounding, 5% source quality, 10% synthesis, 15% clarity, 20% latency.
+- Overall is recomputed by the application from sub-scores using: 25% completeness, 20% grounding, 5% source quality, 10% synthesis, 15% clarity, 25% latency.
 - For the longest-time report, verify that the added time corresponds to materially stronger structure, synthesis, grounding, or source quality.
 - For the shortest-time report, verify that speed is accompanied by clear organization, useful synthesis, and direct relevance. If the response mostly resembles snippets or a source list, score clarity and synthesis accordingly.
 - Do not confuse volume with quality; downgrade reports that force the reader to assemble the argument.
