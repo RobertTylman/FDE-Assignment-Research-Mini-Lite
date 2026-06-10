@@ -23,7 +23,7 @@
 
 Research Mini Lite runs a stateful research loop using LangGraph:
 
-<div style="max-width: 600px; margin: 0 auto;">
+<div style="max-width: 380px; margin: 0 auto;">
 
 ```mermaid
 %%{init: {
@@ -39,45 +39,36 @@ Research Mini Lite runs a stateful research loop using LangGraph:
 }}%%
 
 flowchart TD
-    Start["User Query + Optional JSON Schema"] --> StateInit["Initialize State: tool_iterations = 0"]
-    StateInit --> AgentNode{"Agent Node: tool_iterations >= MAX_TOOL_ITERATIONS?"}
+    classDef input fill:#f1f5f9,stroke:#94a3b8,stroke-width:1px,color:#000000
+    classDef state fill:#f8fafc,stroke:#94a3b8,stroke-width:1px,color:#000000
+    classDef decision fill:#0d766e,stroke:#0d766e,stroke-width:2px,color:#ffffff
+    classDef llm fill:#f0fdfa,stroke:#0d766e,stroke-width:1.5px,color:#000000
+    classDef endnode fill:#1e293b,stroke:#1e293b,stroke-width:2px,color:#ffffff
+
+    QueryInput["User Query and Optional JSON Schema"]:::input --> StateInit["Initialize State:<br/>tool_iterations = 0"]:::state
+    StateInit --> AgentNode{"Agent Node:<br/>tool_iterations >=<br/>MAX_TOOL_ITERATIONS?"}:::decision
 
     %% Agent Node Decision Flow
-    AgentNode -->|Yes - Budget Spent| ForcedSynth["LLM Forced Final Synthesis (Prompt Injection)"]
-    AgentNode -->|No - Budget Active| LLMTools["LLM Call (Bound Search Tools)"]
+    AgentNode -->|Yes - Budget Spent| ForcedSynth["LLM Forced Final Synthesis (Prompt Injection)"]:::state
+    AgentNode -->|No - Budget Active| LLMTools["LLM Call (Bound Search Tools)"]:::llm
 
     %% Output of Agent Node
-    ForcedSynth --> Router{"tools_condition Router: Any tool_calls?"}
+    ForcedSynth --> Router{"tools_condition Router:<br/>Any tool_calls?"}:::decision
     LLMTools --> Router
 
     %% Routing
-    Router -->|Yes| ToolsNode["Tools Node (Execute Tavily search)"]
-    ToolsNode --> UpdateState["Increment tool_iterations"]
+    Router -->|Yes| ToolsNode["Tools Node (Execute Tavily search)"]:::llm
+    ToolsNode --> UpdateState["Increment tool_iterations"]:::state
     UpdateState --> AgentNode
 
-    Router -->|No / Done| GraphEnd["End Graph State Machine"]
+    Router -->|No / Done| GraphEnd["End Graph State Machine"]:::input
 
     %% Post-Graph Processing
-    GraphEnd --> CheckSchema{"Is output_schema provided?"}
-    CheckSchema -->|Yes| PostHocSchema["Post-Hoc Structured LLM Pass (JSON format)"]
-    PostHocSchema --> ReturnJSON(["Return JSON Output"])
-    
-    CheckSchema -->|No| ReturnMarkdown(["Return Markdown Report"])
+    GraphEnd --> CheckSchema{"Is output_schema<br/>provided?"}:::decision
+    CheckSchema -->|No| ReturnMarkdown(["Return Markdown Report"]):::endnode
 
-    %% Styling
-    style Start fill:#f1f5f9,stroke:#94a3b8,stroke-width:1px
-    style StateInit fill:#f8fafc,stroke:#94a3b8,stroke-width:1px
-    style AgentNode fill:#0d766e,stroke:#0d766e,color:#ffffff,stroke-width:2px
-    style ForcedSynth fill:#f8fafc,stroke:#94a3b8,stroke-width:1px
-    style LLMTools fill:#f0fdfa,stroke:#0d766e,stroke-width:1.5px
-    style Router fill:#0d766e,stroke:#0d766e,color:#ffffff,stroke-width:2px
-    style ToolsNode fill:#f0fdfa,stroke:#0d766e,stroke-width:1.5px
-    style UpdateState fill:#f8fafc,stroke:#94a3b8,stroke-width:1px
-    style GraphEnd fill:#f1f5f9,stroke:#94a3b8,stroke-width:1px
-    style CheckSchema fill:#0d766e,stroke:#0d766e,color:#ffffff,stroke-width:2px
-    style PostHocSchema fill:#0d766e,stroke:#0d766e,color:#ffffff,stroke-width:2px
-    style ReturnJSON fill:#0d766e,stroke:#0d766e,color:#ffffff,stroke-width:2px
-    style ReturnMarkdown fill:#1e293b,stroke:#1e293b,color:#ffffff,stroke-width:2px
+    CheckSchema -->|Yes| PostHocSchema["Post-Hoc Structured LLM Pass (JSON format)"]:::decision
+    PostHocSchema --> ReturnJSON(["Return JSON Output"]):::decision
 ```
 
 </div>
