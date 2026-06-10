@@ -154,9 +154,22 @@ The workspace includes a built-in chat app and evaluation UI to benchmark **Tavi
 
 Every evaluation run is saved as a full JSON report in the repository-level `eval-reports/` folder. Filenames use the local date and time, for example `2026-06-09_15-04-22.json`.
 
-### Model Latency Distributions
+### Evaluation Metrics
 
+#### The "Sweet Spot" (Latency vs. Quality)
+![Latency vs Quality](assets/latency_vs_quality.png)
+
+#### Model Latency Distributions
 ![Latency Distribution](assets/latency_distribution.png)
+
+#### Multi-Metric Quality Radar
+![Quality Radar](assets/quality_radar.png)
+
+#### Source Density
+![Source Density](assets/source_density.png)
+
+#### LLM Judge Win Rate
+![Win Rate](assets/win_rate.png)
 
 ---
 
