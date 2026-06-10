@@ -49,7 +49,7 @@ Score each dimension from 1 to 5:
 - Source quality: sources are authoritative, relevant, and diverse enough for the query.
 - Synthesis: compares, prioritizes, explains tradeoffs, and states implications rather than listing facts or snippets.
 - Clarity: report is well organized, logically sequenced, concise, and easy to scan. Penalize source dumps, repetition, abrupt topic jumps, unclear hierarchy, long undifferentiated paragraphs, and messy formatting.
-- Latency: score user-facing speed as 5 for under 5 seconds, 4 for 6-20 seconds, 3 for 20-35 seconds, 2 for 35-50 seconds, and 1 for over 50 seconds.
+- Latency: score user-facing speed on a continuous 1.0-5.0 scale. Use 5.0 for under 5 seconds, about 4.0 for 10 seconds, about 3.0 for 20 seconds, about 2.0 for 35 seconds, and 1.0 for 50+ seconds. Penalize fractional points as latency increases, and apply a steeper penalty above 35 seconds.
 
 Scoring guidance:
 - Overall is recomputed by the application from sub-scores using: 25% completeness, 20% grounding, 5% source quality, 10% synthesis, 15% clarity, 25% latency.
@@ -68,7 +68,7 @@ Return strict JSON with this shape:
       "source_quality": 1-5,
       "synthesis": 1-5,
       "clarity": 1-5,
-      "latency": 1-5,
+      "latency": 1.0-5.0,
       "rationale": "short explanation"
     }
   },
