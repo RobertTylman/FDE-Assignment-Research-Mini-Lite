@@ -89,7 +89,7 @@ I selected **LangGraph** because research is inherently iterative: finding sourc
 * **The Extraction Phase**: Standardizes the output into the user-specified JSON Schema in a single structured call using OpenAI's `response_format` constraint.
 
 ### 2. Value Creation
-* **Technical Value**: Reduces research latency from ~30s to **8-20s** while maintaining multi-hop retrieval and full citations. It significantly reduces token complexity by avoiding recursive structured formatting.
+* **Technical Value**: Reduces research latency from ~43s to **~17s** while maintaining multi-hop retrieval and full citations. It significantly reduces token complexity by avoiding recursive structured formatting, and report length+quality only suffers slightly.
 * **Business Value**: Allows conversational AI products to offer "Deep Search" features inline in real-time chat without frustrating the user with long wait times. It reduces API usage costs by using the cheaper `/search` credits rather than `/research` credits.
 
 ---
