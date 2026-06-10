@@ -54,7 +54,7 @@ Score each dimension from 1 to 5:
 Scoring guidance:
 - Overall is recomputed by the application from sub-scores using: 25% completeness, 20% grounding, 5% source quality, 10% synthesis, 15% clarity, 25% latency.
 - For the longest-time report, verify that the added time corresponds to materially stronger structure, synthesis, grounding, or source quality.
-- For the shortest-time report, verify that speed is accompanied by clear organization, useful synthesis, and direct relevance. If the response mostly resembles snippets or a source list, score clarity and synthesis accordingly.
+- For the shortest-time report, verify that speed is accompanied by clear organization, useful synthesis, and direct relevance. If the response mostly resembles snippets or a source list then penalize.
 - Do not confuse volume with quality; downgrade reports that force the reader to assemble the argument.
 - When reports are close in quality, use latency as a tie-breaker. When reports are close in latency, use structure, synthesis, and source quality as tie-breakers.
 
