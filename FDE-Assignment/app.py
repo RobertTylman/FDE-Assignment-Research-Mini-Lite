@@ -125,6 +125,11 @@ async def evaluation_ui():
     return (APP_DIR / "static" / "index.html").read_text()
 
 
+@app.get("/chat", response_class=HTMLResponse)
+async def chat_ui():
+    return (APP_DIR / "static" / "chat.html").read_text()
+
+
 @app.get("/background.webp")
 async def background_image():
     return FileResponse(APP_DIR / "static" / "background.webp", media_type="image/webp")

@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Research Mini Lite Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f8fa;
+        --panel: rgba(255, 255, 255, 0.78);
+        --panel-strong: rgba(255, 255, 255, 0.88);
+        --surface: rgba(255, 255, 255, 0.72);
+        --ink: #172026;
+        --muted: #5e6a72;
+        --line: rgba(126, 139, 150, 0.36);
+        --accent: #0d766e;
+        --accent-dark: #095f59;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background:
+          linear-gradient(rgba(247, 248, 250, 0.58), rgba(247, 248, 250, 0.68)),
+          url("/background.webp") center / cover fixed no-repeat,
+          var(--bg);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+        line-height: 1.45;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        max-width: 1000px;
+        width: 95%;
+        margin: 0 auto;
+        padding: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 800;
+      }
+
+      .nav-links a {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      main {
+        flex: 1;
+        max-width: 1000px;
+        width: 95%;
+        margin: 0 auto 24px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chat-container {
+        flex: 1;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: 0 12px 40px rgba(23, 32, 38, 0.08);
+        backdrop-filter: blur(14px) saturate(1.08);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .messages {
+        flex: 1;
+        padding: 24px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .message {
+        max-width: 85%;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        line-height: 1.5;
+        position: relative;
+      }
+
+      .message.user {
+        align-self: flex-end;
+        background: var(--accent);
+        color: #fff;
+        border-bottom-right-radius: 0;
+      }
+
+      .message.agent {
+        align-self: flex-start;
+        background: var(--panel-strong);
+        border: 1px solid var(--line);
+        border-bottom-left-radius: 0;
+        color: var(--ink);
+      }
+
+      .message.agent pre {
+        background: rgba(23, 32, 38, 0.04);
+        padding: 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+      }
+
+      .message.agent code {
+        font-family: ui-monospace, SFMono-Regular, monospace;
+        font-size: 12px;
+      }
+
+      .message-time {
+        text-align: right;
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 8px;
+        font-family: ui-monospace, SFMono-Regular, monospace;
+        opacity: 0.8;
+      }
+
+      .input-area {
+        padding: 16px;
+        background: var(--panel-strong);
+        border-top: 1px solid var(--line);
+        display: flex;
+        gap: 12px;
+      }
+
+      input[type="text"] {
+        flex: 1;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--surface);
+        padding: 12px 16px;
+        font: inherit;
+        font-size: 14px;
+      }
+
+      input[type="text"]:focus {
+        outline: 2px solid rgba(13, 118, 110, 0.12);
+        border-color: rgba(13, 118, 110, 0.56);
+      }
+
+      button {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 0 24px;
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      button:hover {
+        background: var(--accent-dark);
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .loading {
+        align-self: flex-start;
+        display: flex;
+        gap: 4px;
+        padding: 16px;
+      }
+
+      .loading-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--muted);
+        border-radius: 50%;
+        animation: pulse 1.4s infinite ease-in-out both;
+      }
+
+      .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+      .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+      @keyframes pulse {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Research Mini Lite Chat</h1>
+      <div class="nav-links">
+        <a href="/">&larr; Back to Evaluation</a>
+      </div>
+    </header>
+    <main>
+      <div class="chat-container">
+        <div class="messages" id="messages">
+          <div class="message agent">
+            Hello! I am the Research Mini Lite agent. What would you like me to research for you today?
+          </div>
+        </div>
+        <form class="input-area" id="chat-form">
+          <input type="text" id="query-input" placeholder="Type your research query..." required autocomplete="off" />
+          <button type="submit" id="send-btn">Send</button>
+        </form>
+      </div>
+    </main>
+
+    <script>
+      const form = document.getElementById('chat-form');
+      const input = document.getElementById('query-input');
+      const messagesEl = document.getElementById('messages');
+      const sendBtn = document.getElementById('send-btn');
+
+      function addMessage(content, role, durationSeconds = null) {
+        const div = document.createElement('div');
+        div.className = `message ${role}`;
+        
+        const contentDiv = document.createElement('div');
+        if (role === 'agent') {
+            contentDiv.innerHTML = marked.parse(content);
+        } else {
+            contentDiv.textContent = content;
+        }
+        div.appendChild(contentDiv);
+
+        if (role === 'agent' && durationSeconds) {
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            timeDiv.textContent = `${durationSeconds}s`;
+            div.appendChild(timeDiv);
+        }
+
+        messagesEl.appendChild(div);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function addLoading() {
+        const div = document.createElement('div');
+        div.className = 'loading';
+        div.id = 'loading-indicator';
+        div.innerHTML = '<div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>';
+        messagesEl.appendChild(div);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function removeLoading() {
+        const indicator = document.getElementById('loading-indicator');
+        if (indicator) {
+            indicator.remove();
+        }
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const query = input.value.trim();
+        if (!query) return;
+
+        addMessage(query, 'user');
+        input.value = '';
+        input.disabled = true;
+        sendBtn.disabled = true;
+        
+        addLoading();
+
+        const startTime = performance.now();
+
+        try {
+          const response = await fetch('/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: query })
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          const duration = ((performance.now() - startTime) / 1000).toFixed(2);
+          removeLoading();
+          addMessage(data.output, 'agent', duration);
+        } catch (err) {
+          removeLoading();
+          addMessage(`Error: ${err.message}`, 'agent');
+        } finally {
+          input.disabled = false;
+          sendBtn.disabled = false;
+          input.focus();
+        }
+      });
+    </script>
+  </body>
+</html>
