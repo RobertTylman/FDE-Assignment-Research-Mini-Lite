@@ -149,6 +149,8 @@ curl http://localhost:8000/langsmith/status
 
 The workspace includes a built-in chat app and evaluation UI to benchmark **Tavily Search Advanced**, **Research Mini Lite**, and **Tavily Research Mini**.
 
+![Evaluation Dashboard UI](assets/appscreenshot.png)
+
 1. Start the server: `python app.py`
 2. Navigate to `http://localhost:8000` in your web browser.
 3. Select or type queries and click **Run Evaluation**.
