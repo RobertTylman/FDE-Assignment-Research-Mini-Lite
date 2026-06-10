@@ -150,7 +150,7 @@ The workspace includes a built-in chat app and evaluation UI to benchmark **Tavi
 1. Start the server: `python app.py`
 2. Navigate to `http://localhost:8000` in your web browser.
 3. Select or type queries and click **Run Evaluation**.
-4. The dashboard records wall-clock latency, source counts, and prompts an LLM-based judge to score output quality (completeness, factual grounding, source quality, synthesis, clarity) from 1 to 5.
+4. The dashboard records total latency, source counts, and prompts an LLM-based judge to score output quality (completeness, factual grounding, source quality, synthesis, clarity) from 1 to 5.
 
 Every evaluation run is saved as a full JSON report in the repository-level `eval-reports/` folder. Filenames use the local date and time, for example `2026-06-09_15-04-22.json`.
 
