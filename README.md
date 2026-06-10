@@ -158,17 +158,28 @@ Every evaluation run is saved as a full JSON report in the repository-level `eva
 
 For the full combined report containing all 49 evaluation runs, see [`eval-reports/big_eval.json`](eval-reports/big_eval.json).
 
-#### Model Latency Distributions
-![Latency Distribution](assets/latency_distribution.png)
-
-#### Multi-Metric Quality Radar
-![Quality Radar](assets/quality_radar.png)
-
-#### Source Density
-![Source Density](assets/source_density.png)
-
-#### LLM Judge Win Rate
-![Win Rate](assets/win_rate.png)
+<table align="center">
+  <tr>
+    <td align="center">
+      <b>Model Latency Distributions</b><br>
+      <img src="assets/latency_distribution.png" width="100%">
+    </td>
+    <td align="center">
+      <b>Multi-Metric Quality Radar</b><br>
+      <img src="assets/quality_radar.png" width="100%">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <b>Source Density</b><br>
+      <img src="assets/source_density.png" width="100%">
+    </td>
+    <td align="center">
+      <b>LLM Judge Win Rate</b><br>
+      <img src="assets/win_rate.png" width="100%">
+    </td>
+  </tr>
+</table>
 
 #### Qualitative Comparison
 

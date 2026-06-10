@@ -84,7 +84,7 @@ sns.set_theme(style="whitegrid", rc={"axes.edgecolor": "#cbd5e1", "grid.color": 
 # 1. Latency vs Quality Scatter Plot
 df_scatter = pd.DataFrame(scatter_data)
 if not df_scatter.empty:
-    plt.figure(figsize=(9, 6))
+    plt.figure(figsize=(8, 8))
     ax = sns.scatterplot(
         data=df_scatter, 
         x="Latency (s)", 
@@ -117,7 +117,7 @@ if not df_radar_raw.empty:
     angles = [n / float(N) * 2 * pi for n in range(N)]
     angles += angles[:1]
     
-    plt.figure(figsize=(7, 7))
+    plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 12})
     
     ax = plt.subplot(111, polar=True)
@@ -156,7 +156,7 @@ if not df_radar_raw.empty:
 # 3. Source Density / Depth (Boxplot)
 df_source = pd.DataFrame(source_data)
 if not df_source.empty:
-    plt.figure(figsize=(9, 6))
+    plt.figure(figsize=(8, 8))
     
     reverse_labels = {v: k for k, v in labels.items()}
     
@@ -188,7 +188,7 @@ if not df_source.empty:
 # 4. Overall Win Rate (Donut Chart)
 total_wins = sum(win_counts.values())
 if total_wins > 0:
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(8, 8))
     
     # Filter out 0 wins
     plot_data = {k: v for k, v in win_counts.items() if v > 0}

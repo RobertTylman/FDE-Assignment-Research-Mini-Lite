@@ -37,7 +37,7 @@ df['Model'] = df['Model'].map(lambda x: label_map.get(x, x))
 sns.set_theme(style="whitegrid")
 plt.rcParams.update({'font.size': 12})
 
-fig, ax = plt.subplots(figsize=(10, 6))
+fig, ax = plt.subplots(figsize=(8, 8))
 
 # Playful color palette with RML as the standout color
 custom_palette = {
