@@ -89,12 +89,12 @@ flowchart TD
 ## Technical Statement & Thought Process
 
 ### 1. Approach & Architectural Design
-We selected **LangGraph** because research is inherently iterative: finding source $X$ often changes what we need to look up next (multi-hop). To maintain control over costs and latency, we decoupled the **research synthesis phase** from the **schema enforcement phase**:
+I selected **LangGraph** because research is inherently iterative: finding source $X$ often changes what we need to look up next (multi-hop). To maintain control over costs and latency, we decoupled the **research synthesis phase** from the **schema enforcement phase**:
 * **The Research Phase**: Focuses entirely on finding information, validating facts, and generating a readable Markdown report with clear citations.
 * **The Extraction Phase**: Standardizes the output into the user-specified JSON Schema in a single structured call using OpenAI's `response_format` constraint.
 
 ### 2. Value Creation
-* **Technical Value**: Reduces research latency from ~30s to **3-8s** while maintaining multi-hop retrieval and full citations. It significantly reduces token complexity by avoiding recursive structured formatting.
+* **Technical Value**: Reduces research latency from ~30s to **8-20s** while maintaining multi-hop retrieval and full citations. It significantly reduces token complexity by avoiding recursive structured formatting.
 * **Business Value**: Allows conversational AI products to offer "Deep Search" features inline in real-time chat without frustrating the user with long wait times. It reduces API usage costs by using the cheaper `/search` credits rather than `/research` credits.
 
 ---
@@ -226,7 +226,7 @@ When schema parameters are included, the API returns a structured object inside 
 
 ## Evaluation & Benchmarking
 
-The workspace includes a built-in evaluation panel to benchmark **Tavily Search Advanced**, **Research Mini Lite**, and **Tavily Research Mini**.
+The workspace includes a built-in chat app and evaluation UI to benchmark **Tavily Search Advanced**, **Research Mini Lite**, and **Tavily Research Mini**.
 
 1. Start the server: `python app.py`
 2. Navigate to `http://localhost:8000` in your web browser.
