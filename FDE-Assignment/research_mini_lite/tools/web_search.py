@@ -8,6 +8,8 @@ from typing import Any
 import httpx
 from langchain_core.tools import tool
 
+from research_mini_lite.observability import traceable
+
 DEFAULT_CHUNKS_PER_SOURCE = 2
 DEFAULT_INCLUDE_ANSWER = "advanced"
 DEFAULT_MAX_RESULTS = 8
@@ -69,6 +71,7 @@ def _format_result(item: dict[str, Any], index: int) -> str:
     return f"[{index}] {title}\nURL: {url}\nSnippet: {content}".strip()
 
 
+@traceable(name="tavily_search", run_type="tool", tags=["tavily", "search"])
 async def search_web(
     query: str,
     *,

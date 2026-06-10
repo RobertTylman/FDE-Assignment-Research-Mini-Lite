@@ -6,6 +6,7 @@ from typing import Any
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel
+from pydantic import Field
 
 
 class ResearchMiniLiteState(BaseModel):
@@ -17,3 +18,4 @@ class ResearchMiniLiteState(BaseModel):
     tool_iterations: int = 0
     output_schema: dict[str, Any] | None = None
     output_schema_name: str = "research_output"
+    metadata: dict[str, Any] = Field(default_factory=dict)

@@ -20,8 +20,19 @@ from pydantic import Field
 
 from research_mini_lite import ResearchMiniLiteAgent
 from research_mini_lite import ResearchMiniLiteState
+from research_mini_lite.observability import traceable
 
 ProviderName = Literal["tavily_search_advanced", "research_mini_lite", "tavily_research_mini"]
+
+QUALITY_WEIGHTS = {
+    "completeness": 0.20,
+    "grounding": 0.15,
+    "source_quality": 0.10,
+    "synthesis": 0.15,
+    "clarity": 0.10,
+    "latency": 0.20,
+    "efficiency": 0.10,
+}
 
 
 QUERIES_PATH = Path(__file__).parent / "queries.json"
@@ -44,6 +55,7 @@ Score from 1 to 5 on each dimension:
 
 Overall scoring guidance:
 - Weight the final overall score toward balanced usefulness: 20% completeness, 15% grounding, 10% source quality, 15% synthesis, 10% clarity, 20% latency, 10% efficiency.
+- The application will recompute overall from the sub-scores above, so make the sub-scores internally consistent with your rationale.
 - CRITICAL: User-facing speed is a first-class feature. A report delivered in under 10 seconds (like `research_mini_lite`) must be heavily favored. If a fast report (under 10s) provides a solid, comprehensive, and well-cited answer (achieving 4+ in completeness and grounding), it MUST win over a slow report (over 30s) due to its vastly superior efficiency.
 - Do not let a high-latency report (over 30 seconds) win unless the lower-latency alternative is completely incorrect, shallow, or missing critical answers. Extra detail or formatting tables in a slow report does NOT justify high latency.
 - When reports are close in research quality, use latency, clarity, and efficiency as tie-breakers.
@@ -143,6 +155,66 @@ def _source_count_from_text(text: str | None) -> int:
     return len(bracket_refs)
 
 
+def _tavily_research_output_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    """Normalize a JSON Schema into the subset accepted by Tavily Research."""
+
+    candidate = schema
+    if "json_schema" in candidate and isinstance(candidate["json_schema"], dict):
+        json_schema = candidate["json_schema"]
+        if isinstance(json_schema.get("schema"), dict):
+            candidate = json_schema["schema"]
+    elif "schema" in candidate and isinstance(candidate["schema"], dict):
+        candidate = candidate["schema"]
+
+    properties = candidate.get("properties")
+    if not isinstance(properties, dict) or not properties:
+        raise ValueError("Tavily Research output_schema must include a non-empty 'properties' object.")
+
+    normalized: dict[str, Any] = {"properties": _with_tavily_descriptions(properties)}
+    required = candidate.get("required")
+    if isinstance(required, list):
+        normalized["required"] = [key for key in required if isinstance(key, str) and key in properties]
+    return normalized
+
+
+def _with_tavily_descriptions(properties: dict[str, Any]) -> dict[str, Any]:
+    normalized: dict[str, Any] = {}
+    for key, value in properties.items():
+        if not isinstance(value, dict):
+            continue
+        field_schema = dict(value)
+        field_schema.setdefault("description", f"The {key.replace('_', ' ')} field.")
+
+        nested_properties = field_schema.get("properties")
+        if isinstance(nested_properties, dict):
+            field_schema["properties"] = _with_tavily_descriptions(nested_properties)
+
+        items = field_schema.get("items")
+        if isinstance(items, dict):
+            item_schema = dict(items)
+            item_schema.setdefault("description", f"An item in {key.replace('_', ' ')}.")
+            item_properties = item_schema.get("properties")
+            if isinstance(item_properties, dict):
+                item_schema["properties"] = _with_tavily_descriptions(item_properties)
+            field_schema["items"] = item_schema
+
+        normalized[key] = field_schema
+    return normalized
+
+
+def _raise_for_status_with_body(response: httpx.Response) -> None:
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        body = response.text
+        detail = body[:1000] if body else str(exc)
+        raise httpx.HTTPStatusError(
+            f"{exc.response.status_code} {exc.response.reason_phrase} from {exc.request.url}: {detail}",
+            request=exc.request,
+            response=exc.response,
+        ) from exc
+
+
 def _format_search_output(data: dict[str, Any]) -> str:
     lines = ["# Tavily Search Advanced Answer", ""]
     answer = data.get("answer")
@@ -164,6 +236,7 @@ def _format_search_output(data: dict[str, Any]) -> str:
     return "\n".join(lines).strip()
 
 
+@traceable(name="eval_tavily_search_advanced", run_type="tool", tags=["evaluation", "tavily-search"])
 async def run_tavily_search_advanced(query: str, options: EvaluationOptions) -> ProviderResult:
     start = time.perf_counter()
     try:
@@ -213,6 +286,7 @@ async def run_tavily_search_advanced(query: str, options: EvaluationOptions) -> 
         )
 
 
+@traceable(name="eval_research_mini_lite", run_type="chain", tags=["evaluation", "research-mini-lite"])
 async def run_research_mini_lite(
     query: str,
     agent: ResearchMiniLiteAgent,
@@ -236,7 +310,7 @@ async def run_research_mini_lite(
             latency_seconds=time.perf_counter() - start,
             output=output,
             source_count=_source_count_from_text(output),
-            metadata={"tool_iterations": result.tool_iterations},
+            metadata={"tool_iterations": result.tool_iterations, **result.metadata},
         )
     except Exception as exc:
         return ProviderResult(
@@ -248,6 +322,7 @@ async def run_research_mini_lite(
         )
 
 
+@traceable(name="eval_tavily_research_mini", run_type="tool", tags=["evaluation", "tavily-research"])
 async def run_tavily_research_mini(query: str, options: EvaluationOptions) -> ProviderResult:
     start = time.perf_counter()
     try:
@@ -260,14 +335,14 @@ async def run_tavily_research_mini(query: str, options: EvaluationOptions) -> Pr
             "output_length": options.tavily_research_output_length,
         }
         if options.output_schema:
-            payload["output_schema"] = options.output_schema
+            payload["output_schema"] = _tavily_research_output_schema(options.output_schema)
         async with httpx.AsyncClient(timeout=60.0) as client:
             create_response = await client.post(
                 "https://api.tavily.com/research",
                 headers={"Authorization": f"Bearer {api_key}"},
                 json=payload,
             )
-            create_response.raise_for_status()
+            _raise_for_status_with_body(create_response)
             created = create_response.json()
             request_id = created.get("request_id")
             if not request_id:
@@ -283,7 +358,7 @@ async def run_tavily_research_mini(query: str, options: EvaluationOptions) -> Pr
                 if status_response.status_code == 202:
                     await asyncio.sleep(options.tavily_research_poll_seconds)
                     continue
-                status_response.raise_for_status()
+                _raise_for_status_with_body(status_response)
                 latest = status_response.json()
                 if latest.get("status") == "completed":
                     break
@@ -336,6 +411,65 @@ def _extract_json(text: str) -> dict[str, Any]:
         return json.loads(match.group(0))
 
 
+def _numeric_score(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        return None
+    return min(5.0, max(1.0, float(value)))
+
+
+def _weighted_overall(score: dict[str, Any]) -> float | None:
+    weighted_sum = 0.0
+    weight_sum = 0.0
+    for key, weight in QUALITY_WEIGHTS.items():
+        value = _numeric_score(score.get(key))
+        if value is None:
+            continue
+        weighted_sum += value * weight
+        weight_sum += weight
+    if weight_sum == 0:
+        return None
+    return round(weighted_sum / weight_sum, 1)
+
+
+def _normalize_quality_scores(judged: dict[str, Any]) -> dict[str, Any]:
+    scores = judged.get("scores")
+    if not isinstance(scores, dict):
+        return judged
+
+    normalized_overalls: dict[str, float] = {}
+    for provider, score in scores.items():
+        if not isinstance(score, dict):
+            continue
+        overall = _weighted_overall(score)
+        if overall is None:
+            continue
+        judge_overall = score.get("overall")
+        if isinstance(judge_overall, int | float) and round(float(judge_overall), 1) != overall:
+            score["judge_overall"] = judge_overall
+        score["overall"] = overall
+        normalized_overalls[provider] = overall
+
+    if normalized_overalls:
+        best_score = max(normalized_overalls.values())
+        winners = [
+            provider
+            for provider, overall in normalized_overalls.items()
+            if abs(overall - best_score) < 0.05
+        ]
+        judge_winner = judged.get("winner")
+        winner = winners[0] if len(winners) == 1 else "tie"
+        if judge_winner and judge_winner != winner:
+            judged["judge_winner"] = judge_winner
+        judged["winner"] = winner
+
+    judged["scoring"] = {
+        "overall_source": "weighted_subscores",
+        "weights": QUALITY_WEIGHTS,
+    }
+    return judged
+
+
+@traceable(name="eval_quality_judge", run_type="chain", tags=["evaluation", "judge"])
 async def judge_quality(query: str, results: list[ProviderResult]) -> dict[str, Any] | None:
     successful = [result for result in results if result.ok and result.output]
     if len(successful) < 2:
@@ -346,6 +480,12 @@ async def judge_quality(query: str, results: list[ProviderResult]) -> dict[str, 
         model=judge_model,
         temperature=0,
         api_key=_require_env("OPENAI_API_KEY"),
+    ).with_config(
+        {
+            "run_name": "eval_quality_judge_llm",
+            "tags": ["evaluation", "judge"],
+            "metadata": {"judge_model": judge_model},
+        }
     )
     reports = "\n\n".join(
         f"## Provider: {result.provider}\nLatency: {result.latency_seconds:.2f}s\n\n{result.output}"
@@ -354,10 +494,12 @@ async def judge_quality(query: str, results: list[ProviderResult]) -> dict[str, 
     prompt = f"{QUALITY_RUBRIC}\n\nResearch query:\n{query}\n\nReports to evaluate:\n{reports}"
     response = await llm.ainvoke([HumanMessage(content=prompt)])
     judged = _extract_json(str(response.content))
+    judged = _normalize_quality_scores(judged)
     judged["judge_model"] = judge_model
     return judged
 
 
+@traceable(name="evaluate_query", run_type="chain", tags=["evaluation"])
 async def evaluate_query(
     query: str,
     options: EvaluationOptions,
@@ -439,6 +581,7 @@ def save_evaluation_report(run: EvaluationRun, reports_dir: Path) -> EvaluationR
     return run
 
 
+@traceable(name="run_evaluation", run_type="chain", tags=["evaluation"])
 async def run_evaluation(
     queries: list[str],
     options: EvaluationOptions,

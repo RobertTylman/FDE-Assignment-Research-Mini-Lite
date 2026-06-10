@@ -24,30 +24,58 @@
 Research Mini Lite runs a stateful research loop using LangGraph:
 
 ```mermaid
-graph TD
-    Start([User Query + Optional JSON Schema]) --> SystemPrompt[Compile Custom Research System Prompt]
-    SystemPrompt --> StateInit["Initialize State: tool_iterations = 0"]
-    StateInit --> LoopStart{"Check: tool_iterations >= MAX_TOOL_ITERATIONS?"}
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "primaryColor": "#0d766e",
+    "primaryTextColor": "#0f172a",
+    "primaryBorderColor": "#0d766e",
+    "lineColor": "#0d766e",
+    "secondaryColor": "#f8fafc",
+    "tertiaryColor": "#f1f5f9"
+  }
+}}%%
 
-    %% Budget Exhausted Flow
-    LoopStart -- "Yes (Budget Exhausted)" --> ForceSynth["Inject Force Synthesis Prompt"]
-    ForceSynth --> FinalSynthesize["Fast LLM Synthesizes Markdown Report"]
+flowchart TD
+    Start["User Query + Optional JSON Schema"] --> StateInit["Initialize State: tool_iterations = 0"]
+    StateInit --> AgentNode{"Agent Node: tool_iterations >= MAX_TOOL_ITERATIONS?"}
 
-    %% Active Budget Flow
-    LoopStart -- "No" --> AgentNode["Fast LLM with Bound Search Tools"]
-    AgentNode --> Decision{"LLM Decision: Call Tool?"}
+    %% Agent Node Decision Flow
+    AgentNode -->|Yes - Budget Spent| ForcedSynth["LLM Forced Final Synthesis (Prompt Injection)"]
+    AgentNode -->|No - Budget Active| LLMTools["LLM Call (Bound Search Tools)"]
+
+    %% Output of Agent Node
+    ForcedSynth --> Router{"tools_condition Router: Any tool_calls?"}
+    LLMTools --> Router
+
+    %% Routing
+    Router -->|Yes| ToolsNode["Tools Node (Execute Tavily search)"]
+    ToolsNode --> UpdateState["Increment tool_iterations"]
+    UpdateState --> AgentNode
+
+    Router -->|No / Done| GraphEnd["End Graph State Machine"]
+
+    %% Post-Graph Processing
+    GraphEnd --> CheckSchema{"Is output_schema provided?"}
+    CheckSchema -->|Yes| PostHocSchema["Post-Hoc Structured LLM Pass (JSON format)"]
+    PostHocSchema --> ReturnJSON(["Return JSON Output"])
     
-    Decision -- "Yes" --> WebSearch["Execute Web Search (Tavily API)"]
-    WebSearch --> UpdateState["Append Snippets to State, increment tool_iterations"]
-    UpdateState --> LoopStart
+    CheckSchema -->|No| ReturnMarkdown(["Return Markdown Report"])
 
-    Decision -- "No" --> FinalSynthesize
-
-    %% Output Formatting Step
-    FinalSynthesize --> CheckSchema{"Is output_schema provided?"}
-    CheckSchema -- "Yes" --> StructLLM["Structured LLM Call: Single-Pass JSON Conversion"]
-    StructLLM --> ReturnJSON["Return JSON Response"]
-    CheckSchema -- "No" --> ReturnMarkdown["Return Markdown Report"]
+    %% Styling
+    style Start fill:#f1f5f9,stroke:#94a3b8,stroke-width:1px
+    style StateInit fill:#f8fafc,stroke:#94a3b8,stroke-width:1px
+    style AgentNode fill:#0d766e,stroke:#0d766e,color:#ffffff,stroke-width:2px
+    style ForcedSynth fill:#f8fafc,stroke:#94a3b8,stroke-width:1px
+    style LLMTools fill:#f0fdfa,stroke:#0d766e,stroke-width:1.5px
+    style Router fill:#0d766e,stroke:#0d766e,color:#ffffff,stroke-width:2px
+    style ToolsNode fill:#f0fdfa,stroke:#0d766e,stroke-width:1.5px
+    style UpdateState fill:#f8fafc,stroke:#94a3b8,stroke-width:1px
+    style GraphEnd fill:#f1f5f9,stroke:#94a3b8,stroke-width:1px
+    style CheckSchema fill:#0d766e,stroke:#0d766e,color:#ffffff,stroke-width:2px
+    style PostHocSchema fill:#0d766e,stroke:#0d766e,color:#ffffff,stroke-width:2px
+    style ReturnJSON fill:#0d766e,stroke:#0d766e,color:#ffffff,stroke-width:2px
+    style ReturnMarkdown fill:#1e293b,stroke:#1e293b,color:#ffffff,stroke-width:2px
 ```
 
 ### Why it is so fast:
@@ -109,10 +137,15 @@ Create a `.env` file in the root or `FDE-Assignment` folder:
 TAVILY_API_KEY=your_tavily_api_key
 OPENAI_API_KEY=your_openai_api_key
 
+# Optional LangSmith tracing
+LANGSMITH_API_KEY=your_langsmith_api_key
+LANGSMITH_PROJECT=research-mini-lite
+LANGSMITH_TRACING=true
+
 # Optional Customizations
 OPENAI_MODEL=gpt-4o-mini
 OPENAI_TEMPERATURE=0.1
-RESEARCH_MINI_LITE_FAST_MODE=true
+RESEARCH_MINI_LITE_FAST_MODE=false
 RESEARCH_MINI_LITE_TARGET_SECONDS=9.5
 RESEARCH_MINI_LITE_FAST_MAX_RESULTS=12
 MAX_TOOL_ITERATIONS=5
@@ -134,6 +167,12 @@ python app.py
 ```
 
 The server runs on `http://localhost:8000`.
+
+If `LANGSMITH_API_KEY` is set, Research Mini Lite traces API calls, Tavily search, agent synthesis, evaluation provider runs, and quality judging to LangSmith. Check tracing status at:
+
+```bash
+curl http://localhost:8000/langsmith/status
+```
 
 ---
 

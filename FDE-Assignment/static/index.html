@@ -3,7 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Research Evaluation</title>
+    <title>Research Mini Lite Evaluation</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
       :root {
         color-scheme: light;
@@ -40,7 +41,8 @@
 
       header,
       main {
-        max-width: 1280px;
+        max-width: 1720px;
+        width: 95%;
         margin: 0 auto;
         padding: 24px;
       }
@@ -75,8 +77,8 @@
 
       .layout {
         display: grid;
-        grid-template-columns: minmax(320px, 420px) 1fr;
-        gap: 20px;
+        grid-template-columns: 310px 1fr;
+        gap: 24px;
         align-items: start;
       }
 
@@ -103,7 +105,7 @@
       }
 
       textarea,
-      input,
+      input:not([type="checkbox"]),
       select {
         width: 100%;
         border: 1px solid var(--line);
@@ -115,7 +117,7 @@
       }
 
       textarea:focus,
-      input:focus,
+      input:not([type="checkbox"]):focus,
       select:focus {
         background: var(--panel-strong);
         border-color: rgba(13, 118, 110, 0.56);
@@ -304,16 +306,116 @@
         margin-bottom: 12px;
       }
 
-      .score {
-        margin: 10px 0;
-        padding: 10px;
-        background: rgba(244, 247, 246, 0.74);
-        border-radius: 6px;
+      .score-card {
+        margin: 14px 0;
+        padding: 12px 14px;
+        background: rgba(13, 118, 110, 0.05);
+        border-left: 3px solid var(--accent);
+        border-radius: 0 6px 6px 0;
+        color: var(--ink);
+      }
+      .score-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .score-title {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--accent);
+        letter-spacing: 0.5px;
+      }
+      .score-badge.overall {
+        background: var(--accent);
+        color: white;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+      }
+      .score-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      .metric-badge {
+        background: var(--surface);
+        border: 1px solid var(--line);
         color: var(--muted);
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .score-rationale {
+        margin: 6px 0 0;
         font-size: 13px;
+        line-height: 1.4;
+        font-style: italic;
+        color: var(--muted);
       }
 
-      pre {
+      .report-content {
+        background: rgba(251, 252, 253, 0.78);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        max-height: 540px;
+        overflow: auto;
+        padding: 16px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--ink);
+      }
+      .report-content h1,
+      .report-content h2,
+      .report-content h3 {
+        margin-top: 18px;
+        margin-bottom: 8px;
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .report-content h1 { font-size: 16px; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+      .report-content h2 { font-size: 15px; }
+      .report-content h3 { font-size: 13px; }
+      .report-content p { margin: 0 0 10px; }
+      .report-content ul,
+      .report-content ol { margin: 0 0 12px; padding-left: 20px; }
+      .report-content li { margin-bottom: 4px; }
+      .report-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 12px 0;
+        font-size: 12px;
+      }
+      .report-content th,
+      .report-content td {
+        border: 1px solid var(--line);
+        padding: 6px 8px;
+        text-align: left;
+      }
+      .report-content th {
+        background: rgba(13, 118, 110, 0.06);
+        font-weight: 650;
+      }
+      .report-content code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        background: rgba(23, 32, 38, 0.05);
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-size: 11px;
+      }
+      .report-content pre {
+        background: rgba(23, 32, 38, 0.02);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 10px;
+        overflow: auto;
+        margin-bottom: 12px;
+      }
+
+      pre.error {
         background: rgba(251, 252, 253, 0.78);
         border: 1px solid var(--line);
         border-radius: 6px;
@@ -325,6 +427,7 @@
         word-break: break-word;
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         font-size: 12px;
+        color: var(--bad);
       }
 
       .judge {
@@ -333,8 +436,182 @@
         color: var(--muted);
       }
 
+      .judge-report-path {
+        background: rgba(23, 32, 38, 0.02);
+        border: 1px dashed var(--line);
+        border-radius: 6px;
+        padding: 10px 14px;
+        margin-top: 10px;
+        font-size: 11px;
+        color: var(--muted);
+        font-family: ui-monospace, monospace;
+        word-break: break-all;
+      }
+
       .error {
         color: var(--bad);
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #ffffff;
+        border: 1px solid var(--line);
+        box-shadow: 0 2px 8px rgba(23, 32, 38, 0.04);
+        border-radius: 6px;
+        padding: 6px 14px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        line-height: 12px;
+        height: 28px;
+        box-sizing: border-box;
+      }
+      .status-badge.ready {
+        border-color: rgba(13, 118, 110, 0.25);
+        background: rgba(13, 118, 110, 0.03);
+        color: var(--accent);
+      }
+      .status-badge.running {
+        border-color: rgba(204, 115, 0, 0.25);
+        background: rgba(204, 115, 0, 0.03);
+        color: var(--warn);
+      }
+      .status-badge.failed {
+        border-color: rgba(166, 27, 27, 0.25);
+        background: rgba(166, 27, 27, 0.03);
+        color: var(--bad);
+      }
+      .status-badge.complete {
+        border-color: rgba(18, 108, 67, 0.25);
+        background: rgba(18, 108, 67, 0.03);
+        color: var(--good);
+      }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: currentColor;
+        box-shadow: 0 0 6px currentColor;
+        flex-shrink: 0;
+        transform: translateY(-0.5px);
+      }
+      .status-text {
+        display: inline-block;
+        line-height: 12px;
+      }
+      .status-badge.running .status-dot {
+        animation: pulse-dot 1.5s infinite ease-in-out;
+      }
+      @keyframes pulse-dot {
+        0% { opacity: 0.3; transform: scale(0.8); }
+        50% { opacity: 1; transform: scale(1.2); }
+        100% { opacity: 0.3; transform: scale(0.8); }
+      }
+
+      .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 40px;
+        text-align: center;
+        background: var(--panel-strong);
+        border: 1px solid var(--line);
+        border-top: 4px solid var(--accent);
+        border-radius: 8px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+        backdrop-filter: blur(14px);
+        margin: 20px 0;
+      }
+      .spinner {
+        position: relative;
+        width: 50px;
+        height: 50px;
+        margin-bottom: 24px;
+      }
+      .spinner-double {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: var(--accent);
+        opacity: 0.6;
+        position: absolute;
+        top: 0;
+        left: 0;
+        animation: bounce-spinner 2.0s infinite ease-in-out;
+      }
+      .spinner-double-2 {
+        animation-delay: -1.0s;
+      }
+      @keyframes bounce-spinner {
+        0%, 100% { transform: scale(0.0); }
+        50% { transform: scale(1.0); }
+      }
+      .loading-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0 0 8px 0;
+        color: var(--ink);
+      }
+      .loading-subtitle {
+        font-size: 14px;
+        color: var(--muted);
+        max-width: 480px;
+        margin: 0 0 20px 0;
+        line-height: 1.4;
+      }
+      .timer-display {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--accent);
+        background: rgba(13, 118, 110, 0.05);
+        padding: 4px 12px;
+        border-radius: 4px;
+        border: 1px solid rgba(13, 118, 110, 0.1);
+        display: inline-block;
+      }
+
+      .query-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 6px;
+        background: rgba(13, 118, 110, 0.02);
+        border: 1px solid rgba(13, 118, 110, 0.08);
+        cursor: pointer;
+        user-select: none;
+        font-size: 13px;
+        line-height: 1.4;
+        transition: all 0.2s ease;
+        margin-bottom: 2px;
+      }
+      .query-item:hover {
+        background: rgba(13, 118, 110, 0.06);
+        border-color: rgba(13, 118, 110, 0.18);
+      }
+      .query-item input[type="checkbox"] {
+        margin: 2px 0 0 0;
+        width: 15px;
+        height: 15px;
+        flex-shrink: 0;
+        cursor: pointer;
+      }
+      .query-text {
+        color: var(--ink);
+        word-break: break-word;
+        font-weight: 500;
+      }
+      #demoSchema {
+        font-size: 11.5px;
+        padding: 8px 10px;
       }
 
       @media (max-width: 980px) {
@@ -371,19 +648,33 @@
   <body>
     <header>
       <div>
-        <h1>Research Evaluation</h1>
-        <p class="subtitle">
-          Compare Tavily Search Advanced with answer, Research Mini Lite, and Tavily Research Mini
-          on report quality, latency, and source depth. Research Mini Lite is tuned for 10-12 sources under 10 seconds.
+        <h1 style="font-size: 26px; font-weight: 800; color: #000000; display: flex; align-items: center; gap: 8px;">
+          Research Mini Lite Evaluation
+        </h1>
+        <p class="subtitle" style="font-size: 13.5px; line-height: 1.5; color: #000000; margin-top: 6px;">
+          Quantify agent execution patterns across standard search APIs, the Research Mini Lite LangGraph agent, and Tavily Research Mini. 
+          Analyze latency budgets, source diversity, citation densities, and judge quality scores.
         </p>
       </div>
-      <div class="status" id="status">Ready</div>
+      <div class="status-badge ready" id="status"><span class="status-dot"></span><span class="status-text">System Ready</span></div>
     </header>
 
     <main class="layout">
       <section class="panel control-panel">
-        <label for="queries">Research queries</label>
-        <textarea id="queries" spellcheck="false"></textarea>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <label style="margin-bottom: 0;">Research queries</label>
+          <div style="display: flex; gap: 6px;">
+            <button id="select-all-queries" type="button" style="min-height: 22px; padding: 2px 8px; font-size: 10px; font-weight: 700; background: rgba(13, 118, 110, 0.08); color: var(--accent); border: 1px solid rgba(13, 118, 110, 0.2); border-radius: 4px; cursor: pointer; text-transform: uppercase;">All</button>
+            <button id="select-none-queries" type="button" style="min-height: 22px; padding: 2px 8px; font-size: 10px; font-weight: 700; background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; cursor: pointer; text-transform: uppercase;">None</button>
+          </div>
+        </div>
+        <div id="query-checklist" style="max-height: 240px; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: var(--surface); display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+          <!-- Dynamically generated checklist -->
+        </div>
+        <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+          <input id="custom-query" type="text" placeholder="Add custom query..." style="flex: 1; height: 36px; padding: 6px 10px; font-size: 13px;" />
+          <button id="add-query-btn" type="button" style="min-height: 36px; padding: 0 12px; font-size: 13px; font-weight: 700; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; cursor: pointer;">Add</button>
+        </div>
 
         <div class="checks">
           <label class="check">
@@ -404,34 +695,14 @@
           </label>
         </div>
 
-        <div class="row">
-          <div class="field">
-            <label for="maxConcurrency">Query concurrency</label>
-            <input id="maxConcurrency" type="number" min="1" max="6" value="2" />
-            <div class="hint">Use 2 for stable latency comparisons.</div>
-          </div>
-          <div class="field">
-            <label for="maxResults">Tavily Search baseline sources</label>
-            <input id="maxResults" type="number" min="1" max="20" value="8" />
-            <div class="hint">Research Mini Lite independently targets 12 sources.</div>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="field">
-            <label for="outputLength">Research output length</label>
-            <select id="outputLength">
-              <option value="short">short</option>
-              <option value="standard" selected>standard</option>
-              <option value="long">long</option>
-            </select>
-            <div class="hint">Standard keeps Tavily Research Mini comparable.</div>
-          </div>
-          <div class="field">
-            <label for="timeout">Research timeout seconds</label>
-            <input id="timeout" type="number" min="30" max="600" value="180" />
-            <div class="hint">Only applies to Tavily Research Mini.</div>
-          </div>
+        <div style="margin-top: 14px">
+          <label for="demoSchema">Choose Demo Schema (Optional)</label>
+          <select id="demoSchema">
+            <option value="" selected>-- Freeform Markdown (No Schema) --</option>
+            <option value="company_intel">Company Intelligence (Summary, Competitors, URLs)</option>
+            <option value="comparison_matrix">Product Comparison Matrix (Specs, Pros, Cons)</option>
+            <option value="clinical_trials">Clinical Trials Data (Phases, Target, Safety)</option>
+          </select>
         </div>
 
         <div style="margin-top: 14px">
@@ -463,7 +734,6 @@
 
     <script>
       const statusEl = document.getElementById("status");
-      const queriesEl = document.getElementById("queries");
       const resultsEl = document.getElementById("results");
       const summaryEl = document.getElementById("summary");
       const runButton = document.getElementById("run");
@@ -493,12 +763,57 @@
         return `${Number(value || 0).toFixed(2)}s`;
       }
 
+      function setStatus(text, type = "ready") {
+        statusEl.className = `status-badge ${type}`;
+        statusEl.innerHTML = `<span class="status-dot"></span><span class="status-text">${escapeHtml(text)}</span>`;
+      }
+
+      let loadedQueries = [];
+
+      function getCheckedQueries() {
+        return Array.from(document.querySelectorAll('.query-check-item:checked')).map(cb => cb.value);
+      }
+      function renderQueryChecklist(checkedValues = null) {
+        const container = document.getElementById("query-checklist");
+        if (loadedQueries.length === 0) {
+          container.innerHTML = `<div style="color: var(--muted); font-size: 12px; font-style: italic; text-align: center; padding: 10px 0;">No queries loaded. Click 'Load Samples' or add a custom query.</div>`;
+          return;
+        }
+
+        const activeSet = checkedValues ? new Set(checkedValues) : null;
+        
+        container.innerHTML = loadedQueries.map((query) => {
+          const isChecked = activeSet ? activeSet.has(query) : true;
+          return `
+            <label class="query-item">
+              <input type="checkbox" class="query-check-item" value="${escapeHtml(query)}" ${isChecked ? 'checked' : ''} />
+              <span class="query-text">${escapeHtml(query)}</span>
+            </label>
+          `;
+        }).join("");
+      }
+
+      function addCustomQuery() {
+        const input = document.getElementById("custom-query");
+        const val = input.value.trim();
+        if (val) {
+          const currentChecked = getCheckedQueries();
+          if (!loadedQueries.includes(val)) {
+            loadedQueries.unshift(val);
+            currentChecked.push(val);
+          }
+          renderQueryChecklist(currentChecked);
+          input.value = "";
+        }
+      }
+
       async function loadSamples() {
-        statusEl.textContent = "Loading sample queries";
+        setStatus("Loading sample queries", "running");
         const response = await fetch(`/eval/sample-queries?_=${Date.now()}`);
         const data = await response.json();
-        queriesEl.value = data.queries.join("\n");
-        statusEl.textContent = "Ready";
+        loadedQueries = data.queries || [];
+        renderQueryChecklist();
+        setStatus("System Ready", "ready");
       }
 
       function selectedProviders() {
@@ -515,11 +830,17 @@
         return JSON.parse(raw);
       }
 
+      function formatSummaryScore(val) {
+        if (val === undefined || val === null) return "n/a";
+        const num = Number(val);
+        return Number.isInteger(num) ? num.toString() : num.toFixed(1);
+      }
+
       function renderSummary(run) {
         const best = Object.entries(run.summary.average_quality_overall).sort((a, b) => b[1] - a[1])[0];
         const topWinner = Object.entries(run.summary.winners).sort((a, b) => b[1] - a[1])[0];
         const bestLabel = best
-          ? `${escapeHtml(labels[best[0]] || best[0])} (${Number(best[1]).toFixed(1)}/5)`
+          ? `${escapeHtml(labels[best[0]] || best[0])} (${formatSummaryScore(best[1])}/5)`
           : topWinner
             ? `${escapeHtml(labels[topWinner[0]] || topWinner[0])}`
             : "n/a";
@@ -546,13 +867,95 @@
       function renderResult(result, quality) {
         const score = quality?.scores?.[result.provider];
         const scoreHtml = score
-          ? `<div class="score">
-              Overall ${score.overall}/5 · completeness ${score.completeness}/5 · grounding ${score.grounding}/5 · synthesis ${score.synthesis}/5 · latency ${score.latency ?? "n/a"}/5 · efficiency ${score.efficiency ?? "n/a"}/5
-              <br>${escapeHtml(score.rationale || "")}
+          ? `<div class="score-card">
+              <div class="score-header">
+                <span class="score-title">Judge Quality Score</span>
+                <span class="score-badge overall">Overall ${score.overall}/5</span>
+              </div>
+              <div class="score-metrics">
+                <span class="metric-badge">Completeness: ${score.completeness}/5</span>
+                <span class="metric-badge">Grounding: ${score.grounding}/5</span>
+                <span class="metric-badge">Synthesis: ${score.synthesis}/5</span>
+                <span class="metric-badge">Latency: ${score.latency ?? "n/a"}/5</span>
+                <span class="metric-badge">Efficiency: ${score.efficiency ?? "n/a"}/5</span>
+              </div>
+              <p class="score-rationale">${escapeHtml(score.rationale || "")}</p>
             </div>`
           : "";
+        
+        let outputContent = result.output || "";
+        try {
+          const parsedJson = JSON.parse(outputContent);
+          outputContent = "```json\n" + JSON.stringify(parsedJson, null, 2) + "\n```";
+        } catch (e) {
+          // Not JSON, leave as markdown
+        }
+
+        let wordCount = 0;
+        let charCount = 0;
+        let citationCount = 0;
+        let headingCount = 0;
+        let tableCount = 0;
+        let wordsPerSec = 0;
+        let domains = [];
+
+        if (result.ok && result.output) {
+          const text = result.output;
+          wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+          charCount = text.length;
+          
+          // Unique bracketed citations like [1], [2], etc.
+          const bracketMatches = text.match(/\[\d+\]/g) || [];
+          citationCount = new Set(bracketMatches).size;
+
+          // Fallback to general markdown links if no bracketed citations found
+          if (citationCount === 0) {
+            const linkMatches = text.match(/\[([^\]]+)\]\(([^)]+)\)/g) || [];
+            citationCount = linkMatches.length;
+          }
+
+          headingCount = (text.match(/^#{1,6}\s+/gm) || []).length;
+          
+          // Check for tables
+          const pipeLines = (text.match(/^\|/gm) || []).length;
+          tableCount = pipeLines > 2 ? 1 : 0;
+
+          // Latency speed
+          const latency = result.latency_seconds || 0;
+          wordsPerSec = latency > 0 ? Math.round(wordCount / latency) : 0;
+
+          // Extract domains from the URLs in the text
+          const urlRegex = /https?:\/\/[^\s\]\)>,]+/g;
+          const urls = text.match(urlRegex) || [];
+          const uniqueUrls = [...new Set(urls)];
+          const domainRegex = /https?:\/\/([^\/\s]+)/;
+          const uniqueDomains = new Set();
+          
+          uniqueUrls.forEach(url => {
+            const match = url.match(domainRegex);
+            if (match && match[1]) {
+              let d = match[1].toLowerCase();
+              if (d.startsWith("www.")) {
+                d = d.substring(4);
+              }
+              uniqueDomains.add(d);
+            }
+          });
+          domains = [...uniqueDomains];
+        }
+
+        const statsHtml = result.ok
+          ? `<div class="report-stats" style="margin-top: 8px; margin-bottom: 12px; font-size: 11.5px; color: var(--muted); display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: rgba(13, 118, 110, 0.03); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(13, 118, 110, 0.12);">
+              <div><strong>Length:</strong> ${wordCount} words (${charCount} chars)</div>
+              <div><strong>Speed:</strong> ${wordsPerSec} words/sec</div>
+              <div><strong>Citations:</strong> ${citationCount} unique</div>
+              <div><strong>Structure:</strong> ${headingCount} sections${tableCount > 0 ? " · 📊 table" : ""}</div>
+              ${domains.length > 0 ? `<div style="grid-column: span 2; word-break: break-all; margin-top: 2px; padding-top: 4px; border-top: 1px dashed rgba(13, 118, 110, 0.08);"><strong>Domains:</strong> ${domains.slice(0, 5).join(", ")}${domains.length > 5 ? "..." : ""}</div>` : ""}
+            </div>`
+          : "";
+
         const body = result.ok
-          ? `<pre>${escapeHtml(result.output || "")}</pre>`
+          ? `<div class="report-content">${marked.parse(outputContent)}</div>`
           : `<pre class="error">${escapeHtml(result.error || "Provider failed")}</pre>`;
         const okClass = result.ok ? "good" : "bad";
         const okText = result.ok ? "ok" : "failed";
@@ -567,6 +970,7 @@
               <span class="pill">${result.source_count || 0} sources</span>
               ${result.metadata?.response_time ? `<span class="pill">api ${seconds(result.metadata.response_time)}</span>` : ""}
             </div>
+            ${statsHtml}
             ${scoreHtml}
             ${body}
           </article>
@@ -600,17 +1004,14 @@
       }
 
       async function runEvaluation() {
-        const queries = queriesEl.value
-          .split("\n")
-          .map((query) => query.trim())
-          .filter(Boolean);
+        const queries = getCheckedQueries();
         const providers = selectedProviders();
         if (!queries.length) {
-          statusEl.textContent = "Add at least one query";
+          setStatus("Select at least one query", "failed");
           return;
         }
         if (!providers.length) {
-          statusEl.textContent = "Select at least one provider";
+          setStatus("Select at least one provider", "failed");
           return;
         }
 
@@ -618,16 +1019,36 @@
         try {
           outputSchema = readSchema();
         } catch (error) {
-          statusEl.textContent = "Output schema is not valid JSON";
+          setStatus("Output schema is not valid JSON", "failed");
           return;
         }
 
         runButton.disabled = true;
-        statusEl.textContent = "Running evaluation";
-        resultsEl.className = "panel empty";
-        resultsEl.textContent =
-          "Running providers. Research Mini Lite targets 12 sources under 10 seconds; Tavily Research Mini can take a few minutes.";
+        setStatus("Evaluating Agents...", "running");
+        resultsEl.className = "";
+        resultsEl.innerHTML = `
+          <div class="loading-container">
+            <div class="spinner">
+              <div class="spinner-double"></div>
+              <div class="spinner-double spinner-double-2"></div>
+            </div>
+            <h3 class="loading-title">Running Benchmark Evaluation</h3>
+            <p class="loading-subtitle">
+              Executing providers in parallel. Research Mini Lite now uses the original LangGraph agent loop; Tavily Research Mini may run for 1 to 2 minutes.
+            </p>
+            <div class="timer-display" id="loading-timer">0.0s elapsed</div>
+          </div>
+        `;
         summaryEl.innerHTML = "";
+
+        let startTime = Date.now();
+        let timerInterval = setInterval(() => {
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+          const timerEl = document.getElementById("loading-timer");
+          if (timerEl) {
+            timerEl.textContent = `${elapsed}s elapsed`;
+          }
+        }, 100);
 
         try {
           const response = await fetch("/eval/run", {
@@ -638,10 +1059,10 @@
               options: {
                 providers,
                 judge_quality: document.getElementById("judgeQuality").checked,
-                max_concurrency: Number(document.getElementById("maxConcurrency").value || 2),
-                tavily_max_results: Number(document.getElementById("maxResults").value || 8),
-                tavily_research_timeout_seconds: Number(document.getElementById("timeout").value || 180),
-                tavily_research_output_length: document.getElementById("outputLength").value,
+                max_concurrency: 2,
+                tavily_max_results: 8,
+                tavily_research_timeout_seconds: 180,
+                tavily_research_output_length: "standard",
                 output_schema: outputSchema,
                 output_schema_name: document.getElementById("schemaName").value || "research_output",
               },
@@ -651,19 +1072,105 @@
           if (!response.ok) {
             throw new Error(data.detail || "Evaluation failed");
           }
+          clearInterval(timerInterval);
           renderSummary(data);
           renderResults(data);
-          statusEl.textContent = "Complete";
+          setStatus("Run Complete", "complete");
         } catch (error) {
+          clearInterval(timerInterval);
           resultsEl.className = "panel empty error";
           resultsEl.textContent = error.message;
-          statusEl.textContent = "Failed";
+          setStatus("System Alert / Run Failed", "failed");
         } finally {
           runButton.disabled = false;
         }
       }
 
+      const demoSchemas = {
+        company_intel: {
+          name: "company_intel",
+          schema: {
+            type: "object",
+            properties: {
+              company_name: { type: "string" },
+              summary: { type: "string" },
+              key_products: { type: "array", items: { type: "string" } },
+              estimated_revenue: { type: "string" },
+              competitors: { type: "array", items: { type: "string" } },
+              citations: { type: "array", items: { type: "string" } }
+            },
+            required: ["company_name", "summary", "competitors"]
+          }
+        },
+        comparison_matrix: {
+          name: "product_comparison",
+          schema: {
+            type: "object",
+            properties: {
+              product_category: { type: "string" },
+              synthesized_comparison: { type: "string" },
+              items: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    price_indicator: { type: "string" },
+                    key_pros: { type: "array", items: { type: "string" } },
+                    key_cons: { type: "array", items: { type: "string" } }
+                  },
+                  required: ["name", "key_pros"]
+                }
+              }
+            },
+            required: ["product_category", "items"]
+          }
+        },
+        clinical_trials: {
+          name: "clinical_trials_summary",
+          schema: {
+            type: "object",
+            properties: {
+              drug_class: { type: "string" },
+              target_conditions: { type: "array", items: { type: "string" } },
+              recent_trials_summary: { type: "string" },
+              safety_concerns: { type: "array", items: { type: "string" } }
+            },
+            required: ["drug_class", "recent_trials_summary"]
+          }
+        }
+      };
+
+      document.getElementById("demoSchema").addEventListener("change", (e) => {
+        const val = e.target.value;
+        const nameInput = document.getElementById("schemaName");
+        const schemaTextarea = document.getElementById("outputSchema");
+        
+        if (!val) {
+          nameInput.value = "research_output";
+          schemaTextarea.value = "";
+        } else {
+          const selected = demoSchemas[val];
+          nameInput.value = selected.name;
+          schemaTextarea.value = JSON.stringify(selected.schema, null, 2);
+        }
+      });
+
       document.getElementById("loadSamples").addEventListener("click", loadSamples);
+      document.getElementById("add-query-btn").addEventListener("click", addCustomQuery);
+      document.getElementById("custom-query").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          addCustomQuery();
+        }
+      });
+      document.getElementById("select-all-queries").addEventListener("click", () => {
+        document.querySelectorAll('.query-check-item').forEach(cb => cb.checked = true);
+      });
+      document.getElementById("select-none-queries").addEventListener("click", () => {
+        document.querySelectorAll('.query-check-item').forEach(cb => cb.checked = false);
+      });
+      
       runButton.addEventListener("click", runEvaluation);
       loadSamples();
     </script>

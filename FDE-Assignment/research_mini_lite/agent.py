@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 from typing import Callable
+from typing import TypedDict
 
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
@@ -24,10 +25,18 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 from langgraph.prebuilt import tools_condition
 
+from research_mini_lite.observability import traceable
 from research_mini_lite.state import ResearchMiniLiteState
 from research_mini_lite.tools.web_search import search_web
 
 AGENT_DIR = Path(__file__).parent
+
+
+class EvidenceSource(TypedDict):
+    index: str
+    title: str
+    url: str
+    snippet: str
 
 
 class ResearchMiniLiteAgent:
@@ -158,22 +167,87 @@ class ResearchMiniLiteAgent:
             )
         return f"{query} authoritative sources concise analysis key facts"
 
+    def _split_evidence(self, evidence: str) -> tuple[str, str]:
+        stripped = evidence.strip()
+        if not stripped.startswith("Search answer:"):
+            return "", stripped
+
+        _, _, rest = stripped.partition("Search answer:")
+        answer, _, sources = rest.strip().partition("\n\n[1]")
+        if sources:
+            sources = f"[1]{sources}"
+        else:
+            sources = rest.strip()
+        return answer.strip(), sources.strip()
+
+    def _parse_sources(self, sources: str) -> list[EvidenceSource]:
+        parsed = []
+        blocks = re.split(r"\n\n(?=\[\d+\] )", sources.strip())
+        for block in blocks:
+            match = re.match(r"\[(\d+)\]\s*(.*)", block.strip())
+            if not match:
+                continue
+            lines = block.strip().splitlines()
+            url = ""
+            snippet_lines = []
+            for line in lines[1:]:
+                if line.startswith("URL:"):
+                    url = line.removeprefix("URL:").strip()
+                elif line.startswith("Snippet:"):
+                    snippet_lines.append(line.removeprefix("Snippet:").strip())
+                elif snippet_lines:
+                    snippet_lines.append(line.strip())
+            parsed.append(
+                {
+                    "index": match.group(1),
+                    "title": match.group(2).strip(),
+                    "url": url,
+                    "snippet": " ".join(part for part in snippet_lines if part).strip(),
+                }
+            )
+        return parsed
+
+    def _compact_sources_for_synthesis(self, sources: str, *, snippet_chars: int = 180) -> str:
+        compact_blocks = []
+        for source in self._parse_sources(sources):
+            title = f"[{source['index']}] {source['title']}"
+            url = f"URL: {source['url']}" if source["url"] else ""
+            snippet = source["snippet"]
+            if len(snippet) > snippet_chars:
+                snippet = f"{snippet[:snippet_chars].rstrip()}..."
+            compact = "\n".join(part for part in (title, url, f"Snippet: {snippet}" if snippet else "") if part)
+            if compact:
+                compact_blocks.append(compact)
+        return "\n\n".join(compact_blocks)
+
+    def _build_synthesis_evidence(self, evidence: str) -> str:
+        answer, sources = self._split_evidence(evidence)
+        compact_sources = self._compact_sources_for_synthesis(sources)
+        parts = []
+        if answer:
+            parts.append(f"Search answer:\n{answer}")
+        if compact_sources:
+            parts.append(f"Source notes:\n{compact_sources}")
+        return "\n\n".join(parts) or evidence[:6000]
+
+    def _references_from_evidence(self, evidence: str) -> str:
+        _, sources = self._split_evidence(evidence)
+        references = []
+        for source in self._parse_sources(sources):
+            if source["url"]:
+                references.append(f"[{source['index']}] {source['title']}\nURL: {source['url']}")
+        return "\n\n".join(references).strip()
+
     def _fallback_report(self, query: str, evidence: str, reason: str) -> str:
-        clipped_evidence = evidence[:12000].strip()
-        answer = ""
-        sources = clipped_evidence
-        if clipped_evidence.startswith("Search answer:"):
-            _, _, rest = clipped_evidence.partition("Search answer:")
-            answer, _, sources = rest.strip().partition("\n\n[1]")
-            if sources:
-                sources = f"[1]{sources}"
-            else:
-                sources = rest.strip()
+        answer, _ = self._split_evidence(evidence[:14000])
+        references = self._references_from_evidence(evidence)
         return (
             "## Executive Summary\n\n"
             f"{answer or 'Research Mini Lite returned the fastest available evidence inside the latency budget.'}\n\n"
+            "## Coverage Note\n\n"
+            "This report used the fastest available synthesized search answer because the full synthesis step did not complete inside the latency budget.\n\n"
             f"## Query\n\n{query}\n\n"
-            f"## References and Evidence\n\n{sources}"
+            f"## References\n\n{references}"
         )
 
     async def _search_once(self, query: str) -> str:
@@ -195,8 +269,8 @@ class ResearchMiniLiteAgent:
         state: ResearchMiniLiteState,
         remaining_seconds: float,
     ) -> str:
-        if remaining_seconds <= 0.5:
-            return self._fallback_report(query, evidence, "the synthesis budget was exhausted")
+        if remaining_seconds < 5.0:
+            raise TimeoutError("Not enough remaining latency budget for LLM synthesis.")
 
         schema_instruction = ""
         response_format = None
@@ -208,51 +282,84 @@ class ResearchMiniLiteAgent:
             response_format = self._schema_response_format(state.output_schema, state.output_schema_name)
 
         prompt = (
-            "You are Research Mini Lite. Write the most thorough report possible within a strict latency budget.\n"
-            "Use only the provided evidence. Prioritize concrete facts, chronology, tradeoffs, and implications.\n"
-            "If returning markdown, use this structure: Executive Summary, Key Timeline or Findings, Analysis, "
-            "Current State, References. Cite source numbers inline and list URLs in References. "
-            "Renumber references sequentially.\n"
+            "You are Research Mini Lite. Write a concise synthesized research report within a strict latency budget.\n"
+            "Use only the provided evidence. Prioritize concrete facts, tradeoffs, next steps, and implications.\n"
+            "If returning markdown, use 4 short sections: Executive Summary, Key Findings, Analysis or Tradeoffs, "
+            "and What To Track or Current State. Keep the report between 250 and 450 words before references. "
+            "Use compact paragraphs or bullets; do not copy source snippets verbatim. "
+            "Cite source numbers inline and list URLs in References. Renumber references sequentially.\n"
             f"{schema_instruction}\n"
             f"Research query:\n{query}\n\n"
-            f"Evidence:\n{evidence}"
+            f"Evidence:\n{self._build_synthesis_evidence(evidence)}"
         )
-        llm = self.llm.bind(response_format=response_format) if response_format else self.llm
-        synthesis_timeout = remaining_seconds
-        if evidence.startswith("Search answer:") and not state.output_schema:
-            synthesis_timeout = min(remaining_seconds, 2.75)
+        llm_kwargs: dict[str, Any] = {"max_tokens": 700}
+        if response_format:
+            llm_kwargs["response_format"] = response_format
+        llm = self.llm.bind(**llm_kwargs)
+        llm = llm.with_config(
+            {
+                "run_name": "research_mini_lite_synthesis_llm",
+                "tags": ["research-mini-lite", "synthesis"],
+                "metadata": {
+                    "has_output_schema": bool(state.output_schema),
+                    "target_latency_seconds": self.target_latency_seconds,
+                },
+            }
+        )
         response = await asyncio.wait_for(
             llm.ainvoke([HumanMessage(content=prompt)]),
-            timeout=max(0.5, synthesis_timeout),
+            timeout=max(0.5, remaining_seconds),
         )
         content = response.content
         if not isinstance(content, str):
             content = json.dumps(content)
         if state.output_schema:
             json.loads(content)
+        else:
+            references = self._references_from_evidence(evidence)
+            if references and "## References" not in content and "## References and Evidence" not in content:
+                content = f"{content.rstrip()}\n\n## References\n\n{references}"
+            elif references and "## Additional Sources" not in content:
+                content = f"{content.rstrip()}\n\n## Additional Sources\n\n{references}"
         return content
 
+    @traceable(name="research_mini_lite_fast_path", run_type="chain", tags=["research-mini-lite", "fast-path"])
     async def _run_fast(self, state: ResearchMiniLiteState) -> ResearchMiniLiteState:
         query = self._extract_user_query(state)
         started_at = time.perf_counter()
         evidence = ""
+        metadata: dict[str, Any] = {
+            "fast_mode": True,
+            "target_latency_seconds": self.target_latency_seconds,
+            "fast_search_max_results": self.fast_search_max_results,
+            "fallback_used": False,
+        }
         try:
             search_budget = min(6.75, max(1.0, self.target_latency_seconds - 1.5))
+            search_started_at = time.perf_counter()
             evidence = await asyncio.wait_for(self._search_once(query), timeout=search_budget)
+            metadata["search_seconds"] = time.perf_counter() - search_started_at
             remaining = self.target_latency_seconds - (time.perf_counter() - started_at) - 0.25
+            metadata["synthesis_budget_seconds"] = max(0.0, remaining)
+            synthesis_started_at = time.perf_counter()
             output = await self._synthesize_fast_report(
                 query=query,
                 evidence=evidence,
                 state=state,
                 remaining_seconds=remaining,
             )
+            metadata["synthesis_seconds"] = time.perf_counter() - synthesis_started_at
         except (asyncio.TimeoutError, TimeoutError):
+            metadata["fallback_used"] = True
+            metadata["fallback_reason"] = "latency_budget_reached"
             output = self._fallback_report(
                 query=query,
                 evidence=evidence or "Search did not complete inside the latency budget.",
                 reason="the latency budget was reached",
             )
         except Exception as exc:
+            metadata["fallback_used"] = True
+            metadata["fallback_reason"] = type(exc).__name__
             output = self._fallback_report(
                 query=query,
                 evidence=evidence or f"Search failed: {exc}",
@@ -261,6 +368,10 @@ class ResearchMiniLiteAgent:
 
         state.messages.append(AIMessage(content=output))
         state.tool_iterations = 1 if evidence else 0
+        metadata["total_seconds"] = time.perf_counter() - started_at
+        metadata["evidence_chars"] = len(evidence)
+        metadata["output_chars"] = len(output)
+        state.metadata.update(metadata)
         return state
 
     def _build_graph(self) -> CompiledStateGraph:
@@ -303,6 +414,7 @@ class ResearchMiniLiteAgent:
         builder.add_edge("tools", "agent")
         return builder.compile()
 
+    @traceable(name="research_mini_lite_agent", run_type="chain", tags=["research-mini-lite"])
     async def run(self, state: ResearchMiniLiteState) -> ResearchMiniLiteState:
         if self.fast_mode:
             return await self._run_fast(state)

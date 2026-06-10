@@ -18,6 +18,9 @@ from research_mini_lite import ResearchMiniLiteState
 from research_mini_lite.evaluation import EvaluationOptions
 from research_mini_lite.evaluation import SAMPLE_QUERIES
 from research_mini_lite.evaluation import run_evaluation
+from research_mini_lite.observability import configure_langsmith
+from research_mini_lite.observability import langsmith_enabled
+from research_mini_lite.observability import traceable
 from research_mini_lite.tools import web_search
 
 APP_DIR = Path(__file__).parent
@@ -37,6 +40,7 @@ def load_environment() -> None:
 
 
 load_environment()
+configure_langsmith()
 
 
 def _env_int(name: str, default: int | None = None) -> int | None:
@@ -96,7 +100,7 @@ def build_agent() -> ResearchMiniLiteAgent:
         llm=build_llm(),
         tools=[web_search],
         max_tool_iterations=_env_int("MAX_TOOL_ITERATIONS", 5),
-        fast_mode=_env_bool("RESEARCH_MINI_LITE_FAST_MODE", True),
+        fast_mode=_env_bool("RESEARCH_MINI_LITE_FAST_MODE", False),
         target_latency_seconds=_env_float("RESEARCH_MINI_LITE_TARGET_SECONDS", 9.5) or 9.5,
         fast_search_max_results=_env_int("RESEARCH_MINI_LITE_FAST_MAX_RESULTS", 12) or 12,
     )
@@ -129,11 +133,20 @@ async def background_image():
 @app.get("/eval/sample-queries")
 async def sample_queries(response: Response):
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    selected = random.sample(SAMPLE_QUERIES, min(len(SAMPLE_QUERIES), 6)) if SAMPLE_QUERIES else []
-    return {"queries": selected}
+    return {"queries": SAMPLE_QUERIES}
+
+
+@app.get("/langsmith/status")
+async def langsmith_status():
+    return {
+        "enabled": langsmith_enabled(),
+        "project": os.environ.get("LANGSMITH_PROJECT") or os.environ.get("LANGCHAIN_PROJECT"),
+        "endpoint": os.environ.get("LANGSMITH_ENDPOINT") or "https://api.smith.langchain.com",
+    }
 
 
 @app.post("/eval/run")
+@traceable(name="evaluation_api", run_type="chain", tags=["api", "evaluation"])
 async def run_eval(request: EvaluationRequest):
     """
     Compare Tavily Search Advanced, Research Mini Lite, and Tavily Research Mini.
@@ -152,6 +165,7 @@ async def run_eval(request: EvaluationRequest):
 
 
 @app.post("/run")
+@traceable(name="research_mini_lite_api", run_type="chain", tags=["api", "research-mini-lite"])
 async def run_agent(request: QueryRequest):
     """
     Execute the bounded Research Mini Lite agent on a query string.
