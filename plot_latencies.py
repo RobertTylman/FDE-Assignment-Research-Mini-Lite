@@ -5,12 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 
-files = [
-    "eval-reports/2026-06-09_23-58-22.json",
-    "eval-reports/2026-06-10_00-00-17.json",
-    "eval-reports/2026-06-10_00-02-33.json",
-    "eval-reports/2026-06-10_09-43-06.json"
-]
+files = glob.glob("eval-reports/*.json")
 
 data_records = []
 
@@ -21,7 +16,8 @@ for file in files:
             for res in item.get('results', []):
                 provider = res.get('provider')
                 latency = res.get('latency_seconds')
-                if provider and latency is not None:
+                # Filter out 0-second points (failed or cached runs)
+                if provider and latency is not None and latency > 1.0:
                     data_records.append({
                         "Model": provider,
                         "Latency (s)": latency
