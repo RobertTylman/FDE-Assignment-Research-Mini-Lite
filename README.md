@@ -5,8 +5,6 @@
 
 ---
 
-📖 **[Technical Statement](TECHNICAL_STATEMENT.md)** for product philosophy, architecture, and tradeoffs.
-
 ## The Core Problem
 
 1. **High Latency for Deep Research**: Tavily Research Mini is extremely thorough but is too slow (~30s to 180s) for conversational search/chat interfaces.
@@ -120,7 +118,6 @@ FDE-Assignment/
 ### 1. Clone & Set Up Environment
 
 ```bash
-cd FDE-Assignment
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -132,7 +129,7 @@ pip install -r requirements.txt
 Start the FastAPI application:
 
 ```bash
-python app.py
+python FDE-Assignment/app.py
 ```
 
 The server runs on `http://localhost:8000`.
@@ -151,7 +148,7 @@ The workspace includes a built-in chat app and evaluation UI to benchmark **Tavi
 
 ![Evaluation Dashboard UI](assets/appscreenshot.png)
 
-1. Start the server: `python app.py`
+1. Start the server: `python FDE-Assignment/app.py`
 2. Navigate to `http://localhost:8000` in your web browser.
 3. Select or type queries and click **Run Evaluation**.
 4. The dashboard records total latency, source counts, and prompts an LLM-based judge to score output quality (completeness, factual grounding, source quality, synthesis, clarity) from 1 to 5.
