@@ -149,6 +149,8 @@ python FDE-Assignment/app.py
 
 The server runs on `http://localhost:8000`.
 
+Optional: Enable Langsmith tracing:
+
 If `LANGSMITH_API_KEY` is set, Research Mini Lite traces API calls, Tavily search, agent synthesis, evaluation provider runs, and quality judging to LangSmith. Check tracing status at:
 
 ```bash
