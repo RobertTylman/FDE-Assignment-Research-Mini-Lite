@@ -8,7 +8,7 @@
 ## The Core Problem
 
 1. **High Latency for Deep Research**: Tavily Research Mini is extremely thorough but is too slow for conversational search/chat interfaces, with **~36s p50** and **~76s p95 latency** in the included benchmark set.
-2. **Standard Search is Too Thin**: The standard Tavily `/search` endpoint is fast, but lacks multi-hop reasoning capabilities (gathering facts from source A to query source B) and does not synthesize strong reports.
+2. **Standard Search is Too Thin**: The standard Tavily `/search` endpoint is fast **(~4.9s p50 / ~7.2s p95)**, but lacks multi-hop reasoning capabilities (gathering facts from source A to query source B) and does not synthesize strong reports.
 3. **No Structured Output in Fast Search**: Standard Tavily search does not support arbitrary output schemas (JSON formats), whereas business integrations frequently demand structured data (e.g., comparative matrices, extraction tables).
 
 **Result:** Across the included 49-query evaluation, Research Mini Lite reduced p50 latency from **~36s to ~16s** while preserving multi-hop retrieval, citations, and report synthesis.
