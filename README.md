@@ -7,9 +7,39 @@
 
 ## The Core Problem
 
-1. **High Latency for Deep Research**: Tavily Research Mini is extremely thorough but is too slow (~30s to 180s) for conversational search/chat interfaces.
+1. **High Latency for Deep Research**: Tavily Research Mini is extremely thorough but is too slow for conversational search/chat interfaces, with **~36s p50** and **~76s p95 latency** in the included benchmark set.
 2. **Standard Search is Too Thin**: The standard Tavily `/search` endpoint is fast, but lacks multi-hop reasoning capabilities (gathering facts from source A to query source B) and does not synthesize strong reports.
 3. **No Structured Output in Fast Search**: Standard Tavily search does not support arbitrary output schemas (JSON formats), whereas business integrations frequently demand structured data (e.g., comparative matrices, extraction tables).
+
+**Result:** Across the included 49-query evaluation, Research Mini Lite reduced p50 latency from **~36s to ~16s** while preserving multi-hop retrieval, citations, and report synthesis.
+It is positioned as a faster middle tier between `/search` and full Research Mini for chat-native research workflows.
+
+## Evaluation Metrics
+
+For the full combined report containing all 49 evaluation runs, see [`eval-reports/big_eval.json`](eval-reports/big_eval.json).
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <br>
+      <img src="assets/latency_distribution.png" width="100%">
+    </td>
+    <td align="center">
+      <br>
+      <img src="assets/quality_radar.png" width="100%">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <br>
+      <img src="assets/source_density.png" width="100%">
+    </td>
+    <td align="center">
+      <br>
+      <img src="assets/win_rate.png" width="100%">
+    </td>
+  </tr>
+</table>
 
 ## The Thesis
 
@@ -89,7 +119,7 @@ I selected **LangGraph** because research is inherently iterative: finding sourc
 * **The Extraction Phase**: Converts the report into schema-guided JSON in a single structured call using OpenAI's `response_format` constraint, then validates that the model returned parseable JSON.
 
 ### 2. Value Creation
-* **Technical Value**: Reduces research latency from ~43s to **~17s** while maintaining multi-hop retrieval and full citations. It significantly reduces token complexity by avoiding recursive structured formatting, and report length+quality only diminishes slightly.
+* **Technical Value**: Reduces p50 research latency from ~36s to **~16s** while maintaining multi-hop retrieval and full citations. It significantly reduces token complexity by avoiding recursive structured formatting, and report length+quality only diminishes slightly.
 * **Business Value**: Allows conversational AI products to offer "Deep Search" features inline in real-time chat without frustrating the user with long wait times. It reduces API usage costs by using the cheaper `/search` credits rather than `/research` credits.
 
 ---
@@ -172,34 +202,12 @@ The workspace includes a built-in chat app and evaluation UI to benchmark **Tavi
 
 Every evaluation run is saved as a full JSON report in the repository-level `eval-reports/` folder. Filenames use the local date and time, for example `2026-06-09_15-04-22.json`.
 
-### Evaluation Metrics
+## Tradeoffs: 
+From the evaluation, it is clear that Research Mini Lite has advantages over Research Mini in terms of speed and cost, but it is not as comprehensive. This was a deliberate design choice, as the goal of Research Mini Lite is to provide a fast and cost-effective solution for simple research queries, while Research Mini is designed for more complex and comprehensive research queries. However, for certain queries, report depth and quality can be an issue, and it is not always clear when to use Research Mini Lite and when to use Research Mini. 
 
-For the full combined report containing all 49 evaluation runs, see [`eval-reports/big_eval.json`](eval-reports/big_eval.json).
+Research Mini Lite has much stronger report structure and quality than /search advanced. Reports are generally easier to read and more intuitive to follow. /Search advanced uses more sources on average, however, this does not always result in stronger reports, as retrieved sources are not guaranteed to benefit a query. Future iterations should experiment with latency vs sources vs report length vs number of tool calls to find the optimal balance for different types of research queries. One solution is to merge Research Mini Lite into Tavily's existing ***auto*** mode so that research complexity can better scale with different queries.
 
-<table align="center">
-  <tr>
-    <td align="center">
-      <br>
-      <img src="assets/latency_distribution.png" width="100%">
-    </td>
-    <td align="center">
-      <br>
-      <img src="assets/quality_radar.png" width="100%">
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <br>
-      <img src="assets/source_density.png" width="100%">
-    </td>
-    <td align="center">
-      <br>
-      <img src="assets/win_rate.png" width="100%">
-    </td>
-  </tr>
-</table>
-
-#### Qualitative Comparison
+## Qualitative Comparison
 
 **Positive Case Study: Research Mini Lite Wins**
 > **Query:** _Compare the current AI safety policies from OpenAI, Anthropic, Google DeepMind, and Meta._
@@ -219,13 +227,6 @@ For the full combined report containing all 49 evaluation runs, see [`eval-repor
 | **Research Mini Lite** | Executive Summary: <br> The EU AI Act implementation timeline for companies building general-purpose AI systems includes several key dates between 2024 and 2027. The most important changes focus on phased applicability of obligations, with initial governance and classification requirements starting in August 2025, followed by full applicability of the Act in August 2026, and extended compliance deadlines for providers who placed AI models on the market before August 2025. <br>  <br> Key Findings: <br> 1. August 2, 2025: Applicability of Chapter V relating to general-purpose AI models begins. This includes obligations around classification, procedures, and additional requirements for providers of general-purpose AI models considered to pose systemic risks [1]. <br> 2. August 2, 2026: The EU AI Act becomes generally applicable to all AI systems, including general-purpose AI, except for certain high-risk AI systems that have extended deadlines [1][6]. <br> 3. August 2, 2027: Providers of general-purpose AI models that were already on the market by August 2, 2025, have until this date to comply fully with the AI Act [2]. <br> 4. High-risk AI systems that are safety components of produc... | Gives a concise executive summary and key findings with some analysis. Grounding is adequate but sources are fewer and less diverse. The report is somewhat generic and less detailed on specific timeline shifts or implications. Clarity is average with some room for better structure. |
 | **Research Mini** | **EU AI Act – Timeline Changes that Matter Most for General‑Purpose AI (GPAI) Developers** <br>  <br> --- <br>  <br> ### 1.  Core deadline shifts introduced in 2025‑2026   <br>  <br> \| Milestone \| What changes \| Practical effect for GPAI providers \| <br> \|-----------\|--------------\|--------------------------------------\| <br> \| **2 August 2025** – first day GPAI obligations apply \| The Act’s risk‑based regime for “general‑purpose AI models” becomes enforceable. Providers must produce technical documentation, conduct risk assessments (including systemic‑risk analysis for models >10²⁵ FLOPs), and put in place post‑market monitoring and incident‑reporting mechanisms. The EU AI Office’s **General‑Purpose AI Code of Practice** and the Commission’s **Guidelines on GPAI obligations** are already published, giving concrete check‑lists [1][2]. \| Companies must treat the 2 Aug 2025 date as a hard “go‑live” for all GPAI‑related compliance work – documentation, risk‑management, and internal AI‑literacy programmes must be ready before that day. \| <br> \| **2 August 2027** – “grandfather‑in” deadline for pre‑2025 GPAI \| GPAI models that were already placed on the market **before** 2 Aug 2025 rece... | Extremely thorough and well-structured report covering all major timeline changes, practical effects, stakeholder impacts, and resource planning. Excellent synthesis comparing deadlines, explaining tradeoffs, and implications for different company types. Grounding is strong with many authoritative sources cited. Clarity is excellent with logical sequencing and formatting. Slightly slower latency but justified by depth and quality. |
 
-
----
-
-## Tradeoffs: 
-From the evaluation, it is clear that Research Mini Lite has advantages over Research Mini in terms of speed and cost, but it is not as comprehensive. This was a deliberate design choice, as the goal of Research Mini Lite is to provide a fast and cost-effective solution for simple research queries, while Research Mini is designed for more complex and comprehensive research queries. However, for certain queries, report depth and quality can be an issue, and it is not always clear when to use Research Mini Lite and when to use Research Mini. 
-
-Research Mini Lite has much stronger report structure and quality than /search advanced. Reports are generally easier to read and more intuitive to follow. /Search advanced uses more sources on average, however, this does not always result in stronger reports, as retrieved sources are not guaranteed to benefit a query. Future iterations should experiment with latency vs sources vs report length vs number of tool calls to find the optimal balance for different types of research queries. One solution is to merge Research Mini Lite into Tavily's existing ***auto*** mode so that research complexity can better scale with different queries.
 
 ---
 
