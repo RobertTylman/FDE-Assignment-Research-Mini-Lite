@@ -15,6 +15,8 @@ def configure_langsmith() -> None:
 
     api_key = os.environ.get("LANGSMITH_API_KEY") or os.environ.get("LANGCHAIN_API_KEY")
     if not api_key:
+        os.environ["LANGSMITH_TRACING"] = "false"
+        os.environ["LANGCHAIN_TRACING_V2"] = "false"
         return
 
     os.environ.setdefault("LANGSMITH_API_KEY", api_key)
