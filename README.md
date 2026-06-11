@@ -77,7 +77,7 @@ flowchart TD
 1. **Parallel Tool Execution**: When the LLM emits multiple tool calls in a single turn, LangGraph executes them in parallel, enabling multi-aspect search in a single round-trip.
 2. **Single-Hop Endpoint**: Instead of polling a long-running research queue, it leverages Tavily's highly optimized `/search` endpoint with a configurable `search_depth` ("basic" or "advanced").
 3. **Hard Budget Enforcement**: A `MAX_TOOL_ITERATIONS` guardrail ensures the agent never gets trapped in infinite search loops, forcing a synthesis step when the budget is spent.
-4. **Post-Hoc Structured Extraction**: Rather than forcing the entire multi-hop planning loop to output JSON (which degrades reasoning quality and increases token usage/latency), the research runs in freeform markdown. Structured formatting is executed as a single, deterministic final pass only if requested.
+4. **Post-Hoc Structured Extraction**: Rather than forcing the entire multi-hop planning loop to output JSON (which degrades reasoning quality and increases token usage/latency), the research runs in freeform markdown. Structured formatting is executed as a single schema-guided final pass only if requested.
 
 ---
 
@@ -86,7 +86,7 @@ flowchart TD
 ### 1. Approach & Architectural Design
 I selected **LangGraph** because research is inherently iterative: finding source $X$ often changes what we need to look up next (multi-hop). To maintain control over costs and latency, we decoupled the **research synthesis phase** from the **schema enforcement phase**:
 * **The Research Phase**: Focuses entirely on finding information, validating facts, and generating a readable Markdown report with clear citations.
-* **The Extraction Phase**: Standardizes the output into the user-specified JSON Schema in a single structured call using OpenAI's `response_format` constraint.
+* **The Extraction Phase**: Converts the report into schema-guided JSON in a single structured call using OpenAI's `response_format` constraint, then validates that the model returned parseable JSON.
 
 ### 2. Value Creation
 * **Technical Value**: Reduces research latency from ~43s to **~17s** while maintaining multi-hop retrieval and full citations. It significantly reduces token complexity by avoiding recursive structured formatting, and report length+quality only diminishes slightly.
@@ -222,6 +222,13 @@ For the full combined report containing all 49 evaluation runs, see [`eval-repor
 
 ---
 
+## Tradeoffs: 
+From the evaluation, it is clear that Research Mini Lite has advantages over Research Mini in terms of speed and cost, but it is not as comprehensive. This was a deliberate design choice, as the goal of Research Mini Lite is to provide a fast and cost-effective solution for simple research queries, while Research Mini is designed for more complex and comprehensive research queries. However, for certain queries, report depth and quality can be an issue, and it is not always clear when to use Research Mini Lite and when to use Research Mini. 
+
+Research Mini Lite has much stronger report structure and quality than /search advanced. Reports are generally easier to read and more intuitive to follow. /Search advanced uses more sources on average, however, this does not always result in stronger reports, as retrieved sources are not guaranteed to benefit a query. Future iterations should experiment with latency vs sources vs report length vs number of tool calls to find the optimal balance for different types of research queries. One solution is to merge Research Mini Lite into Tavily's existing ***auto*** mode so that research complexity can better scale with different queries.
+
+---
+
 ## Usage Examples
 
 ### 1. Freeform Markdown Research Query
@@ -234,7 +241,7 @@ curl -X POST "http://localhost:8000/run" \
 
 ### 2. Structured Schema Research Query
 
-To receive structured JSON matching a specific schema, supply `output_schema` and `output_schema_name`:
+To receive schema-guided structured JSON, supply `output_schema` and `output_schema_name`:
 
 ```bash
 curl -X POST "http://localhost:8000/run" \
@@ -266,4 +273,4 @@ curl -X POST "http://localhost:8000/run" \
   }'
 ```
 
-When schema parameters are included, the API returns a structured object inside the `"output_json"` field.
+When schema parameters are included, the API returns parseable structured JSON inside the `"output_json"` field.

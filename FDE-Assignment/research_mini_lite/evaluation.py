@@ -26,11 +26,11 @@ ProviderName = Literal["tavily_search_advanced", "research_mini_lite", "tavily_r
 
 QUALITY_WEIGHTS = {
     "completeness": 0.25,
-    "grounding": 0.25,
+    "grounding": 0.20,
     "source_quality": 0.05,
     "synthesis": 0.10,
     "clarity": 0.15,
-    "latency": 0.20,
+    "latency": 0.25,
 }
 
 
