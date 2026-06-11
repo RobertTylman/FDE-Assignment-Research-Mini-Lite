@@ -99,7 +99,6 @@ I selected **LangGraph** because research is inherently iterative: finding sourc
 ```text
 FDE-Assignment/
   app.py                     # FastAPI application endpoints & configuration
-  requirements.txt
   research_mini_lite/
     __init__.py
     agent.py                 # LangGraph agent definitions & loop state
