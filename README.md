@@ -84,7 +84,7 @@ flowchart TD
 ## Technical Statement & Thought Process
 
 ### 1. Approach & Architectural Design
-I selected **LangGraph** because research is inherently iterative: finding source $X$ often changes what we need to look up next (multi-hop). To maintain control over costs and latency, we decoupled the **research synthesis phase** from the **schema enforcement phase**:
+I selected **LangGraph** because research is inherently iterative: finding source $X$ often changes what I need to look up next (multi-hop). To maintain control over costs and latency, I decoupled the **research synthesis phase** from the **schema enforcement phase**:
 * **The Research Phase**: Focuses entirely on finding information, validating facts, and generating a readable Markdown report with clear citations.
 * **The Extraction Phase**: Converts the report into schema-guided JSON in a single structured call using OpenAI's `response_format` constraint, then validates that the model returned parseable JSON.
 
