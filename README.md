@@ -127,6 +127,22 @@ pip install -r requirements.txt
 
 Start the FastAPI application:
 
+1. Copy the environment template:
+
+```bash
+cp .env.example .env
+```
+
+2. Set your API keys:
+
+```bash
+export TAVILY_API_KEY="your_tavily_key" OPENAI_API_KEY="your_openai_key"
+```
+
+Then, save the file.
+
+3. Run the app:
+
 ```bash
 python FDE-Assignment/app.py
 ```
