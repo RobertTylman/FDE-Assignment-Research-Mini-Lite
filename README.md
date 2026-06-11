@@ -20,23 +20,25 @@ For the full combined report containing all 49 evaluation runs, see [`eval-repor
 
 <table align="center">
   <tr>
-    <td align="center">
+    <td colspan="2" align="center">
       <br>
       <img src="assets/latency_distribution.png" width="100%">
-    </td>
-    <td align="center">
-      <br>
-      <img src="assets/quality_radar.png" width="100%">
     </td>
   </tr>
   <tr>
     <td align="center">
       <br>
-      <img src="assets/source_density.png" width="100%">
+      <img src="assets/win_rate.png" width="100%">
     </td>
     <td align="center">
       <br>
-      <img src="assets/win_rate.png" width="100%">
+      <img src="assets/source_density.png" width="100%">
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">
+      <br>
+      <img src="assets/quality_radar.png" width="100%">
     </td>
   </tr>
 </table>
